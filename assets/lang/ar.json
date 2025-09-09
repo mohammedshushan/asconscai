@@ -222,5 +222,7 @@
   "check_your_internet": "يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.",
   "no_pending_permissions": "لا توجد طلبات أذونات معلقة حالياً",
   "exit_time": "وقت الخروج",
-  "return_time": "وقت العودة"
+  "return_time": "وقت العودة",
+  "failed_to_load_data": "فشل  تحميل البيانات",
+  "please_check_connection": "تحقق من الاتصال بالانترنت"
 }

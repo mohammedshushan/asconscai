@@ -31,10 +31,17 @@ class _MyPermissionsScreenState extends State<MyPermissionsScreen> {
   @override
   void initState() {
     super.initState();
-    _dataFuture = _fetchData();
+    _loadData();
+  }
+
+  void _loadData() {
+    setState(() {
+      _dataFuture = _fetchData();
+    });
   }
 
   Future<Map<String, dynamic>> _fetchData() async {
+    // تم ترك rethrow لأن FutureBuilder سيلتقط الخطأ ويعالجه بأمان
     try {
       final requests = await _permissionService.getPermissionRequests(widget.user.usersCode.toString());
       final types = await _permissionService.getPermissionTypes();
@@ -100,9 +107,14 @@ class _MyPermissionsScreenState extends State<MyPermissionsScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: Color(0xFF6C63FF)));
           }
+          // -->> ✅ بداية الجزء الذي تم تعديله <<--
           if (snapshot.hasError) {
-            return Center(child: Text('${localizations.translate('error')}: ${snapshot.error}'));
+            // طباعة الخطأ للمطور فقط
+            print("Error fetching permissions data: ${snapshot.error}");
+            // عرض واجهة خطأ آمنة للمستخدم
+            return _buildErrorWidget(localizations);
           }
+          // -->> 🔚 نهاية الجزء الذي تم تعديله <<--
           if (!snapshot.hasData || (snapshot.data!['requests'] as List).isEmpty) {
             return Center(child: Text(localizations.translate('no_requests_found')!));
           }
@@ -124,6 +136,43 @@ class _MyPermissionsScreenState extends State<MyPermissionsScreen> {
             },
           );
         },
+      ),
+    );
+  }
+
+  // -->> ✅ واجهة جديدة لعرض الأخطاء بشكل آمن <<--
+  Widget _buildErrorWidget(AppLocalizations localizations) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.cloud_off_rounded, size: 64, color: Colors.red.shade400),
+            const SizedBox(height: 16),
+            Text(
+              localizations.translate('failed_to_load_data') ?? 'فشل تحميل البيانات',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red.shade700),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              localizations.translate('please_check_connection') ?? 'يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _loadData,
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              label: Text(localizations.translate('retry') ?? 'إعادة المحاولة', style: const TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6C63FF),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -249,9 +298,16 @@ class _MyPermissionsScreenState extends State<MyPermissionsScreen> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return FutureBuilder<Map<String, dynamic>>(
-              future: _dataFuture, // Reuse the same future
+              future: _dataFuture,
               builder: (context, snapshot) {
-                if (!snapshot.hasData) return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
+                // -->> ✅ بداية الجزء الذي تم تعديله في الفلتر <<--
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
+                }
+                if (snapshot.hasError) {
+                  return SizedBox(height: 200, child: Center(child: Text(localizations.translate('failed_to_load_filters') ?? 'Failed to load filters')));
+                }
+                // -->> 🔚 نهاية الجزء الذي تم تعديله في الفلتر <<--
 
                 final List<PermissionType> types = snapshot.data!['types'];
                 final statuses = {

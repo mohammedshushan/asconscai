@@ -1,4 +1,3 @@
-
 import 'package:asconscai/widgets/attendance/empty_state_widget.dart';
 import 'package:asconscai/widgets/attendance/error_state_widget.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +24,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
   final ApprovalsService _approvalsService = ApprovalsService();
   final VacationService _vacationService = VacationService();
 
-  // دمج جلب الطلبات والأنواع معاً
   late Future<Map<String, dynamic>> _dataFuture;
 
   @override
@@ -82,7 +80,11 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasError) {
-              return ErrorStateWidget(message: snapshot.error.toString(), onRetry: _refreshRequests);
+              print("Error fetching pending vacations: ${snapshot.error}");
+              return ErrorStateWidget(
+                  message: localizations.translate('failed_to_load_data') ?? 'فشل تحميل البيانات. يرجى المحاولة مرة أخرى.',
+                  onRetry: _refreshRequests
+              );
             }
             if (!snapshot.hasData) {
               return EmptyStateWidget(message: localizations.translate('no_pending_vacations')!, icon: Iconsax.document_cloud);
@@ -259,43 +261,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
                     ),
                   ],
                 ),
-               /*
-                const SizedBox(height: 16),
-
-                // Action indicator
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.orange.shade200),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Iconsax.clock,
-                            size: 16,
-                            color: Colors.orange.shade600,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'في انتظار القرار',
-                            style: TextStyle(
-                              color: Colors.orange.shade700,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                */
               ],
             ),
           ),
@@ -333,7 +298,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
     );
   }
 
-  // --- Enhanced BottomSheet Design ---
   void _showDetailsSheet(BuildContext context, PendingVacationRequest request, String vacationType) {
     final localizations = AppLocalizations.of(context)!;
     final isRtl = Directionality.of(context) == TextDirection.RTL;
@@ -360,7 +324,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle bar
               Container(
                 margin: const EdgeInsets.only(top: 12, bottom: 8),
                 height: 4,
@@ -377,7 +340,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header Section
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
@@ -451,7 +413,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
 
                       const SizedBox(height: 24),
 
-                      // Details Section
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
@@ -508,7 +469,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
 
                       const SizedBox(height: 24),
 
-                      // Action Button
                       SizedBox(
                         width: double.infinity,
                         height: 56,
@@ -542,8 +502,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
                           ),
                         ),
                       ),
-
-                      // Safe area padding
                       SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
                     ],
                   ),
@@ -613,7 +571,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
     );
   }
 
-  // --- Enhanced Dialog Design ---
   void _showDecisionDialog(BuildContext context, PendingVacationRequest request) {
     final notesController = TextEditingController();
     final localizations = AppLocalizations.of(context)!;
@@ -648,7 +605,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Header
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -691,7 +647,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
                       ),
                     ),
 
-                    // Content
                     Flexible(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
@@ -754,7 +709,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
                       ),
                     ),
 
-                    // Actions
                     if (!isSubmitting)
                       Container(
                         padding: const EdgeInsets.all(20),
@@ -764,7 +718,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
                         ),
                         child: Column(
                           children: [
-                            // Cancel Button (Full Width)
                             SizedBox(
                               width: double.infinity,
                               height: 48,
@@ -788,10 +741,8 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
 
                             const SizedBox(height: 12),
 
-                            // Action Buttons Row
                             Row(
                               children: [
-                                // Reject Button
                                 Expanded(
                                   child: SizedBox(
                                     height: 48,
@@ -833,7 +784,6 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
 
                                 const SizedBox(width: 12),
 
-                                // Approve Button
                                 Expanded(
                                   child: SizedBox(
                                     height: 48,
@@ -889,6 +839,7 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
 
   Future<void> _handleDecision(BuildContext dialogContext,UserModel user, PendingVacationRequest request, String notes, int flag, Function(bool) setLoading) async {
     setLoading(true);
+    final localizations = AppLocalizations.of(context)!;
 
     try {
       final statusData = {
@@ -913,15 +864,20 @@ class _PendingVacationsScreenState extends State<PendingVacationsScreen> {
       }
 
       if (mounted) {
-        Navigator.pop(dialogContext, true); // إغلاق الـ Dialog وإرجاع true
+        Navigator.pop(dialogContext, true);
         StatusDialog.show(context, AppLocalizations.of(context)!.translate('decision_recorded')!, isSuccess: true);
         _refreshRequests();
       }
 
     } catch (e) {
+      // -->> ✅ بداية التعديل الثاني <<--
+      // (للمطور) طباعة الخطأ
+      print("Error handling vacation decision: $e");
       if (mounted) {
-        StatusDialog.show(context, e.toString(), isSuccess: false);
+        // عرض رسالة خطأ آمنة
+        StatusDialog.show(context, localizations.translate('decision_failed') ?? 'فشل تسجيل القرار. يرجى المحاولة مرة أخرى.', isSuccess: false);
       }
+      // -->> 🔚 نهاية التعديل الثاني <<--
     } finally {
       if (mounted) {
         setLoading(false);

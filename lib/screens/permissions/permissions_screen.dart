@@ -78,7 +78,9 @@ class _PermissionsScreenState extends State<PermissionsScreen>
   }
 
   Future<List<PermissionBalance>> _fetchBalances() async {
+    // Note: If getPermissionTypes fails, the error will be caught by the FutureBuilder
     final types = await _permissionService.getPermissionTypes();
+    // This is placeholder data; you would replace it with actual balance data
     return types.map((type) {
       return PermissionBalance(
         type: type,
@@ -128,9 +130,10 @@ class _PermissionsScreenState extends State<PermissionsScreen>
                       child: Center(
                           child: CircularProgressIndicator(
                               color: Color(0xFF6C63FF))))
+                // ############# START OF FIX #############
                 else if (snapshot.hasError)
-                  SliverFillRemaining(
-                      child: Center(child: Text(snapshot.error.toString())))
+                  _buildErrorSliver(localizations, snapshot.error)
+                // ############# END OF FIX #############
                 else if (!snapshot.hasData || snapshot.data!.isEmpty)
                     SliverFillRemaining(
                         child: Center(
@@ -152,10 +155,8 @@ class _PermissionsScreenState extends State<PermissionsScreen>
       backgroundColor: const Color(0xFF6C63FF),
       pinned: true,
       centerTitle: true,
-      automaticallyImplyLeading: true,
       iconTheme: const IconThemeData(color: Colors.white),
       expandedHeight: 80.0,
-      elevation: 2,
       shape: const ContinuousRectangleBorder(
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(80),
@@ -172,7 +173,7 @@ class _PermissionsScreenState extends State<PermissionsScreen>
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.language_outlined, color: Colors.white, size: 26),
+          icon: const Icon(Icons.language_outlined, color: Colors.white),
           onPressed: () {
             final currentLocale = Localizations.localeOf(context);
             final newLocale = currentLocale.languageCode == 'en'
@@ -185,6 +186,49 @@ class _PermissionsScreenState extends State<PermissionsScreen>
       ],
     );
   }
+
+  // ############# START OF NEW WIDGET FOR ERROR HANDLING #############
+  Widget _buildErrorSliver(AppLocalizations localizations, Object? error) {
+    // Log the actual error for debugging purposes
+    print("Error loading permissions: $error");
+
+    return SliverFillRemaining(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.cloud_off_rounded, size: 64, color: Colors.red.shade400),
+              const SizedBox(height: 16),
+              Text(
+                localizations.translate('failed_to_load_data') ?? 'Failed to load data',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red.shade700),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                localizations.translate('please_check_connection') ?? 'Please check your internet connection and try again.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: _loadData,
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                label: Text(localizations.translate('retry') ?? 'Retry', style: const TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6C63FF),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  // ############# END OF NEW WIDGET #############
 
   Widget _buildContentSliver(BuildContext context, List<PermissionBalance> balances,
       AppLocalizations localizations) {
@@ -494,7 +538,6 @@ class _PermissionsScreenState extends State<PermissionsScreen>
     );
   }
 
-  // ############# START OF FIX #############
   Widget _buildAnimatedServiceCard({
     required String title,
     required String subtitle,
@@ -522,13 +565,12 @@ class _PermissionsScreenState extends State<PermissionsScreen>
           curve: Interval(delay + 0.4, 1.0, curve: Curves.easeOut),
         ));
 
-        // This is the FIX: ensuring opacity is always between 0.0 and 1.0
         final opacity = cardAnimation.value.clamp(0.0, 1.0);
 
         return Transform.translate(
           offset: Offset(0, slideAnimation.value),
           child: Opacity(
-            opacity: opacity, // Use the clamped value here
+            opacity: opacity,
             child: _buildServiceCard(
               title: title,
               subtitle: subtitle,
@@ -541,7 +583,6 @@ class _PermissionsScreenState extends State<PermissionsScreen>
       },
     );
   }
-  // ############# END OF FIX #############
 
   Widget _buildServiceCard({
     required String title,
@@ -566,12 +607,6 @@ class _PermissionsScreenState extends State<PermissionsScreen>
                 color: color.withOpacity(0.15),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
-                spreadRadius: 0,
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
               ),
             ],
             border: Border.all(
@@ -619,7 +654,6 @@ class _PermissionsScreenState extends State<PermissionsScreen>
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
-                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],

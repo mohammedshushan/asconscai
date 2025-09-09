@@ -1,128 +1,9 @@
-
-// مسار الملف: lib/screens/loans_screen.dart
-/*
-import 'package:flutter/material.dart';
-import 'package:collection/collection.dart';
-import '../../models/user_model.dart';
-import '../../services/loan_service.dart';
-import '../../widgets/menu_list_item.dart';
-import '../../app_localizations.dart';
-import 'my_loan_requests_screen.dart';
-import '../loan/new_loan_request_screen.dart';
-import '../../main.dart';
-
-class LoansScreen extends StatefulWidget {
-  final UserModel user;
-  const LoansScreen({super.key, required this.user});
-
-  @override
-  State<LoansScreen> createState() => _LoansScreenState();
-}
-
-class _LoansScreenState extends State<LoansScreen> {
-  final LoanService _loanService = LoanService();
-
-  void _navigateToMyRequests() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => MyLoanRequestsScreen(user: widget.user)),
-    );
-  }
-
-  void _navigateToNewRequest() async {
-    final requests = await _loanService.getLoanRequests(widget.user.usersCode.toString());
-    final maxSerial = requests.map((r) => r.reqSerial).maxOrNull ?? 0;
-    if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => NewLoanRequestScreen(user: widget.user, maxSerial: maxSerial)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: CustomScrollView(
-        slivers: [
-          _buildModernAppBar(context, localizations),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    localizations.translate('loan_services') ?? 'Loan Services',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
-                  ),
-                  const SizedBox(height: 20),
-                  MenuListItem(
-                    index: 0,
-                    title: localizations.translate('new_loan_request') ?? 'New Loan Request',
-                    subtitle: localizations.translate('new_loan_subtitle') ?? 'Apply for a new financial loan',
-                    icon: Icons.post_add_rounded,
-                    onTap: _navigateToNewRequest,
-                  ),
-                  MenuListItem(
-                    index: 1,
-                    title: localizations.translate('my_loan_requests') ?? 'My Requests',
-                    subtitle: localizations.translate('my_loan_subtitle') ?? 'Track your loan application status',
-                    icon: Icons.receipt_long_rounded,
-                    onTap: _navigateToMyRequests,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  SliverAppBar _buildModernAppBar(BuildContext context, AppLocalizations localizations) {
-    return SliverAppBar(
-      backgroundColor: const Color(0xFF6C63FF), // لون أخضر مناسب للسلف
-      pinned: true,
-      centerTitle: true,
-      automaticallyImplyLeading: true,
-      iconTheme: const IconThemeData(color: Colors.white),
-      expandedHeight: 80.0,
-      elevation: 2,
-      shape: const ContinuousRectangleBorder(
-        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(80), bottomRight: Radius.circular(80)),
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-        title: Text(
-          localizations.translate('loan_management') ?? 'Loan Management',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        centerTitle: true,
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.language_outlined, color: Colors.white, size: 26),
-          onPressed: () {
-            final currentLocale = Localizations.localeOf(context);
-            final newLocale = currentLocale.languageCode == 'en' ? const Locale('ar', '') : const Locale('en', '');
-            MyApp.of(context)?.changeLanguage(newLocale);
-          },
-        ),
-        const SizedBox(width: 8),
-      ],
-    );
-  }
-}
-
-
-*/
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../models/user_model.dart';
 import '../../services/loan_service.dart';
-import '../../widgets/menu_list_item.dart';
+import '../../widgets/info_dialog.dart'; // تمت الإضافة لعرض رسائل الخطأ
 import '../../app_localizations.dart';
 import 'my_loan_requests_screen.dart';
 import '../loan/new_loan_request_screen.dart';
@@ -146,15 +27,50 @@ class _LoansScreenState extends State<LoansScreen> {
     );
   }
 
+  // -->> ✅ بداية الجزء الذي تم تعديله بالكامل <<--
   void _navigateToNewRequest() async {
-    final requests = await _loanService.getLoanRequests(widget.user.usersCode.toString());
-    final maxSerial = requests.map((r) => r.reqSerial).maxOrNull ?? 0;
-    if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => NewLoanRequestScreen(user: widget.user, maxSerial: maxSerial)),
+    final localizations = AppLocalizations.of(context)!;
+
+    // إظهار مؤشر تحميل للمستخدم
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(child: CircularProgressIndicator(color: Color(0xFF6C63FF)));
+      },
     );
+
+    try {
+      final requests = await _loanService.getLoanRequests(widget.user.usersCode.toString());
+      final maxSerial = requests.map((r) => r.reqSerial).maxOrNull ?? 0;
+
+      if (!mounted) return;
+      Navigator.pop(context); // إغلاق مؤشر التحميل
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => NewLoanRequestScreen(user: widget.user, maxSerial: maxSerial)),
+      );
+    } catch (e) {
+      // طباعة الخطأ الفعلي في الكونسول للمطور
+      print("Error fetching loan requests before navigation: $e");
+
+      if (!mounted) return;
+      Navigator.pop(context); // إغلاق مؤشر التحميل في حالة الخطأ
+
+      // عرض رسالة خطأ آمنة للمستخدم
+      showDialog(
+        context: context,
+        builder: (_) => InfoDialog(
+          title: localizations.translate('error')!,
+          message: localizations.translate('failed_to_load_data') ?? 'Failed to load necessary data. Please try again.',
+          isSuccess: false,
+        ),
+      );
+    }
   }
+  // -->> 🔚 نهاية الجزء الذي تم تعديله <<--
+
 
   @override
   Widget build(BuildContext context) {

@@ -222,5 +222,7 @@
   "check_your_internet": "Please check your internet connection and try again.",
   "no_pending_permissions": "No pending permission requests found",
   "exit_time": "Exit Time",
-  "return_time": "Return Time"
+  "return_time": "Return Time",
+  "failed_to_load_data": "failed to load data",
+  "please_check_connection": "please check connection"
 }

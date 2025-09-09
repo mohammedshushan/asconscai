@@ -1,4 +1,3 @@
-
 import 'package:asconscai/app_localizations.dart';
 import 'package:asconscai/models/permissions/permission_type_model.dart';
 import 'package:asconscai/models/user_model.dart';
@@ -36,7 +35,13 @@ class _NewPermissionScreenState extends State<NewPermissionScreen> {
   @override
   void initState() {
     super.initState();
-    _typesFuture = _permissionService.getPermissionTypes();
+    _loadPermissionTypes();
+  }
+
+  void _loadPermissionTypes() {
+    setState(() {
+      _typesFuture = _permissionService.getPermissionTypes();
+    });
   }
 
   Future<void> _selectDate(BuildContext context, {required Function(DateTime) onDateSelected}) async {
@@ -118,21 +123,22 @@ class _NewPermissionScreenState extends State<NewPermissionScreen> {
         if (success) Navigator.of(context).pop(true);
       });
     } catch (e) {
+      // (للمطور) طباعة الخطأ الفعلي في الكونسول للمساعدة في تصحيح الأخطاء
+      print("Error submitting permission request: $e");
+
       if (!mounted) return;
 
-      String errorMessage = e.toString().replaceAll('Exception: ', '');
-      if (errorMessage.contains('No Internet Connection')) {
-        errorMessage = localizations.translate('no_internet_connection') ?? 'No Internet Connection';
-      }
-
+      // -->> ✅ بداية الجزء الذي تم تعديله <<--
+      // عرض رسالة خطأ عامة وآمنة للمستخدم بدلاً من الخطأ الفعلي
       showDialog(
         context: context,
         builder: (_) => InfoDialog(
           title: localizations.translate('error')!,
-          message: errorMessage,
+          message: localizations.translate('request_submitted_fail_network') ?? 'An unexpected error occurred. Please try again.',
           isSuccess: false,
         ),
       );
+      // -->> 🔚 نهاية الجزء الذي تم تعديله <<--
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -169,7 +175,29 @@ class _NewPermissionScreenState extends State<NewPermissionScreen> {
             return const Center(child: CircularProgressIndicator(color: Color(0xFF6C63FF)));
           }
           if (snapshot.hasError) {
-            return Center(child: Text(localizations.translate('error_loading_types') ?? 'Error loading types'));
+            // طباعة الخطأ للمطور
+            print("Error loading permission types: ${snapshot.error}");
+            // واجهة خطأ مع زر إعادة المحاولة
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red.shade400, size: 60),
+                    const SizedBox(height: 16),
+                    Text(localizations.translate('error_loading_types') ?? 'Error loading types', textAlign: TextAlign.center),
+                    const SizedBox(height: 20),
+                    ElevatedButton.icon(
+                      onPressed: _loadPermissionTypes,
+                      icon: const Icon(Icons.refresh, color: Colors.white),
+                      label: Text(localizations.translate('retry') ?? 'Retry', style: const TextStyle(color: Colors.white)),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6C63FF)),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(child: Text(localizations.translate('no_permission_types_found') ?? 'No permission types found'));

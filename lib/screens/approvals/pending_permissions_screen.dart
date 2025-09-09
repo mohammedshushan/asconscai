@@ -32,6 +32,7 @@ class _PendingPermissionsScreenState extends State<PendingPermissionsScreen> {
   }
 
   Future<Map<String, dynamic>> _fetchData() async {
+    // try-catch غير ضروري هنا لأن FutureBuilder سيلتقط الخطأ
     final requestsFuture = _approvalsService.getPendingPermissionRequests(widget.user.usersCode.toString());
     final typesFuture = _permissionService.getPermissionTypes();
     final results = await Future.wait([requestsFuture, typesFuture]);
@@ -76,9 +77,16 @@ class _PendingPermissionsScreenState extends State<PendingPermissionsScreen> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
+            // -->> ✅ بداية التعديل الأول <<--
             if (snapshot.hasError) {
-              return ErrorStateWidget(message: snapshot.error.toString(), onRetry: _refreshRequests);
+              // (للمطور) طباعة الخطأ
+              print("Error fetching pending permissions: ${snapshot.error}");
+              return ErrorStateWidget(
+                  message: localizations.translate('failed_to_load_data') ?? 'فشل تحميل البيانات. يرجى المحاولة مرة أخرى.',
+                  onRetry: _refreshRequests
+              );
             }
+            // -->> 🔚 نهاية التعديل الأول <<--
             if (!snapshot.hasData) {
               return EmptyStateWidget(message: localizations.translate('no_pending_permissions')!, icon: Iconsax.document_cloud);
             }
@@ -334,7 +342,6 @@ class _PendingPermissionsScreenState extends State<PendingPermissionsScreen> {
     );
   }
 
-  // ### START: تم نسخ هذا الجزء بالكامل من ملف الإجازات مع حل مشكلة الـ Overflow ###
   void _showDecisionDialog(BuildContext context, PendingPermissionRequest request) {
     final notesController = TextEditingController();
     final localizations = AppLocalizations.of(context)!;
@@ -372,8 +379,8 @@ class _PendingPermissionsScreenState extends State<PendingPermissionsScreen> {
                         ],
                       ),
                     ),
-                    Flexible( // يسمح للمحتوى بالتقلص عند الحاجة
-                      child: SingleChildScrollView( // ### الحل لمشكلة الـ Overflow ###
+                    Flexible(
+                      child: SingleChildScrollView(
                         padding: const EdgeInsets.all(24),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -447,10 +454,9 @@ class _PendingPermissionsScreenState extends State<PendingPermissionsScreen> {
       },
     );
   }
-  // ### END: تم نسخ هذا الجزء بالكامل من ملف الإجازات ###
-
 
   Future<void> _handleDecision(BuildContext dialogContext, PendingPermissionRequest request, String notes, int flag, Function(bool) setLoading) async {
+    final localizations = AppLocalizations.of(context)!; // ### إضافة جديدة
     setLoading(true);
     try {
       final statusData = {
@@ -475,14 +481,19 @@ class _PendingPermissionsScreenState extends State<PendingPermissionsScreen> {
 
       if (mounted) {
         Navigator.pop(dialogContext);
-        StatusDialog.show(context, AppLocalizations.of(context)!.translate('decision_recorded')!, isSuccess: true);
+        StatusDialog.show(context, localizations.translate('decision_recorded')!, isSuccess: true);
         _refreshRequests();
       }
 
     } catch (e) {
+      // -->> ✅ بداية التعديل الثاني <<--
+      // (للمطور) طباعة الخطأ
+      print("Error handling permission decision: $e");
       if (mounted) {
-        StatusDialog.show(context, e.toString(), isSuccess: false);
+        // عرض رسالة خطأ آمنة
+        StatusDialog.show(context, localizations.translate('decision_failed') ?? 'فشل تسجيل القرار. يرجى المحاولة مرة أخرى.', isSuccess: false);
       }
+      // -->> 🔚 نهاية التعديل الثاني <<--
     } finally {
       if (mounted) {
         setLoading(false);

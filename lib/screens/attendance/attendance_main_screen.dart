@@ -100,62 +100,24 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
     try {
       setState(() {
         _isRetrying = true;
+        // إعادة تعيين الـ Future لجلب البيانات من جديد
+        _dashboardDataFuture = _fetchDashboardData();
       });
-
-      final newData = await _fetchDashboardData();
-
-      if (mounted) {
-        setState(() {
-          _dashboardDataFuture = Future.value(newData);
-          _isRetrying = false;
-        });
-      }
+      // ننتظر اكتمال الـ Future الجديد
+      await _dashboardDataFuture;
     } catch (e) {
-      if (mounted) {
+      // FutureBuilder سيعالج عرض الخطأ، يمكننا فقط طباعته هنا
+      print("Error during manual retry: $e");
+    } finally {
+      if(mounted) {
         setState(() {
           _isRetrying = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_getErrorMessage(e)),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
       }
     }
   }
 
-  String _getErrorMessage(dynamic error) {
-    String errorMessage = error.toString().toLowerCase();
-
-    if (errorMessage.contains('network') ||
-        errorMessage.contains('connection') ||
-        errorMessage.contains('unreachable') ||
-        errorMessage.contains('timeout') ||
-        errorMessage.contains('socketexception') ||
-        errorMessage.contains('clientexception')) {
-      return "تعذر الاتصال بالخادم. تحقق من اتصال الإنترنت وحاول مرة أخرى.";
-    }
-
-    if (errorMessage.contains('location')) {
-      return "فشل في تحديد الموقع. حاول مرة أخرى.";
-    }
-
-    if (errorMessage.contains('500') || errorMessage.contains('server')) {
-      return "خطأ في الخادم. حاول مرة أخرى لاحقاً.";
-    }
-
-    if (errorMessage.contains('404')) {
-      return "الخدمة غير متاحة حالياً. حاول مرة أخرى لاحقاً.";
-    }
-
-    if (errorMessage.contains('401') || errorMessage.contains('unauthorized')) {
-      return "انتهت صلاحية الجلسة. قم بتسجيل الدخول مرة أخرى.";
-    }
-
-    return "حدث خطأ غير متوقع. حاول مرة أخرى.";
-  }
+  // -->> ✅ تم حذف دالة _getErrorMessage لأنها غير آمنة <<--
 
   Future<Map<String, dynamic>> _fetchDashboardData() async {
     try {
@@ -191,6 +153,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
         'location': location,
       };
     } catch (e) {
+      // FutureBuilder سيلتقط الخطأ ويعالجه
       rethrow;
     }
   }
@@ -314,10 +277,14 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                 FutureBuilder<Map<String, dynamic>>(
                   future: _dashboardDataFuture,
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
+                    if (snapshot.connectionState == ConnectionState.waiting && !_isRetrying) {
                       return _buildDashboardShimmer();
                     }
+                    // -->> ✅ بداية الجزء الذي تم تعديله <<--
                     if (snapshot.hasError) {
+                      // طباعة الخطأ الفعلي للمطور
+                      print("Error in attendance dashboard FutureBuilder: ${snapshot.error}");
+                      // عرض واجهة خطأ آمنة
                       return Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Container(
@@ -332,7 +299,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                               Icon(Icons.error_outline, color: Colors.orange.shade600, size: 40),
                               const SizedBox(height: 12),
                               Text(
-                                _getErrorMessage(snapshot.error!),
+                                localizations.translate('failed_to_load_data') ?? 'فشل تحميل البيانات',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.orange.shade800,
@@ -346,12 +313,17 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                                   backgroundColor: Colors.orange.shade600,
                                   foregroundColor: Colors.white,
                                 ),
-                                child: const Text("إعادة المحاولة"),
+                                child: Text(localizations.translate('retry') ?? "إعادة المحاولة"),
                               ),
                             ],
                           ),
                         ),
                       );
+                    }
+                    // -->> 🔚 نهاية الجزء الذي تم تعديله <<--
+
+                    if (!snapshot.hasData || snapshot.data == null) {
+                      return _buildDashboardShimmer(); // إظهار الشيمر إذا لم تكن البيانات جاهزة بعد
                     }
 
                     final data = snapshot.data!;
@@ -704,9 +676,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
           );
 
           if (result == true && mounted) {
-            setState(() {
-              _dashboardDataFuture = _fetchDashboardData();
-            });
+            _retryFetchData();
           }
         },
         'enabled': true,

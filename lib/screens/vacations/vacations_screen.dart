@@ -1,15 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -35,7 +23,7 @@ class VacationsScreen extends StatefulWidget {
 class _VacationsScreenState extends State<VacationsScreen> {
   late Future<List<VacationBalance>> _balanceFuture;
   final VacationService _vacationService = VacationService();
-  List<VacationBalance> _currentBalances = []; // لحفظ الأرصدة الحالية
+  List<VacationBalance> _currentBalances = [];
 
   @override
   void initState() {
@@ -45,13 +33,15 @@ class _VacationsScreenState extends State<VacationsScreen> {
 
   void _loadData() {
     _balanceFuture = _vacationService.getVacationBalance(widget.user.usersCode.toString());
-    // حفظ نسخة من الأرصدة عند اكتمال التحميل
     _balanceFuture.then((balances) {
       if (mounted) {
         setState(() {
           _currentBalances = balances;
         });
       }
+    }).catchError((error) {
+      // طباعة الخطأ في الكونسول للمطورين فقط
+      print("Error loading vacation balance: $error");
     });
   }
 
@@ -68,25 +58,51 @@ class _VacationsScreenState extends State<VacationsScreen> {
     ).then((_) => _refreshData());
   }
 
-  // --- تم تعديل هذه الدالة لتمرير الأرصدة ---
+  // -->> ✅ تم تعديل هذه الدالة لمعالجة الأخطاء <<--
   void _navigateToNewRequest() async {
-    final orders = await _vacationService.getVacationOrders(widget.user.usersCode.toString());
-    final maxSerial = orders.map((o) => o.serialPyv).maxOrNull ?? 0;
-    if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => NewRequestScreen(
-          user: widget.user,
-          maxSerial: maxSerial,
-          balances: _currentBalances, // **تمرير قائمة الأرصدة هنا**
+    // إظهار مؤشر تحميل للمستخدم
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) => const Center(child: CircularProgressIndicator(color: Color(0xFF6C63FF))),
+    );
+
+    try {
+      final orders = await _vacationService.getVacationOrders(widget.user.usersCode.toString());
+      final maxSerial = orders.map((o) => o.serialPyv).maxOrNull ?? 0;
+
+      if (!mounted) return;
+      Navigator.pop(context); // إغلاق مؤشر التحميل
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NewRequestScreen(
+            user: widget.user,
+            maxSerial: maxSerial,
+            balances: _currentBalances,
+          ),
         ),
-      ),
-    ).then((requestSubmitted) {
-      if (requestSubmitted == true) {
-        _refreshData();
-      }
-    });
+      ).then((requestSubmitted) {
+        if (requestSubmitted == true) {
+          _refreshData();
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // إغلاق مؤشر التحميل في حالة الخطأ
+
+      // طباعة الخطأ في الكونسول للمطور
+      print("Failed to navigate to new request screen: $e");
+
+      // إظهار رسالة خطأ للمستخدم
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.translate('failed_to_load_data') ?? 'Failed to load data'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -107,8 +123,9 @@ class _VacationsScreenState extends State<VacationsScreen> {
                 _buildModernAppBar(context, localizations),
                 if (snapshot.connectionState == ConnectionState.waiting)
                   const SliverFillRemaining(child: Center(child: CircularProgressIndicator(color: Color(0xFF6C63FF))))
+                // -->> ✅ تم تعديل معالجة الخطأ هنا <<--
                 else if (snapshot.hasError)
-                  _buildErrorState(localizations, snapshot.error.toString())
+                  _buildErrorState(localizations)
                 else if (!snapshot.hasData || snapshot.data!.isEmpty)
                     _buildEmptyState(localizations)
                   else
@@ -169,7 +186,6 @@ class _VacationsScreenState extends State<VacationsScreen> {
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
             ),
             const SizedBox(height: 16),
-
             AnimationLimiter(
               child: GridView.builder(
                 shrinkWrap: true,
@@ -328,20 +344,40 @@ class _VacationsScreenState extends State<VacationsScreen> {
     );
   }
 
-  Widget _buildErrorState(AppLocalizations localizations, String error) {
+  // -->> ✅ تم تعديل هذه الدالة لتكون أكثر أمانًا وفائدة <<--
+  Widget _buildErrorState(AppLocalizations localizations) {
     return SliverFillRemaining(
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.cloud_off_rounded, size: 80, color: Colors.grey.shade400),
-            const SizedBox(height: 20),
-            Text(localizations.translate('error_loading_data')!, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0),
-              child: Text(error, style: TextStyle(color: Colors.grey.shade600), textAlign: TextAlign.center),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.cloud_off_rounded, size: 80, color: Colors.red.shade300),
+              const SizedBox(height: 20),
+              Text(
+                localizations.translate('failed_to_load_data') ?? 'Failed to load data',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                localizations.translate('please_check_connection') ?? 'Please check your internet connection and try again.',
+                style: TextStyle(color: Colors.grey.shade600),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _refreshData,
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                label: Text(localizations.translate('retry') ?? 'Retry', style: const TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6C63FF),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

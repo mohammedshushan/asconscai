@@ -1,4 +1,3 @@
-
 import 'dart:ui'; // لاستخدام BackdropFilter
 import 'package:asconscai/curved_background_painter.dart';
 
@@ -55,7 +54,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       setState(() => _isLoading = false);
 
-      // تأكد من إغلاق أي dialogs مفتوحة قبل عرض الجديد
       Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
 
       await _showCustomDialog(
@@ -65,27 +63,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // استخدام pushAndRemoveUntil مع التأكد من إزالة كل الـ routes
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => HomeScreen(user: user)),
             (Route<dynamic> route) => false,
       );
 
     } catch (e) {
+      // (للمطور) طباعة الخطأ الفعلي للمساعدة في تصحيح الأخطاء
+      print("Login failed with error: $e");
+
       if (!mounted) return;
-
-      final errorString = e.toString().replaceAll('Exception: ', '');
-      final errorMessage = localizations.translate(errorString);
-
       setState(() => _isLoading = false);
 
-      // تأكد من أن الـ context صحيح قبل عرض الـ dialog
-      if (mounted) {
-        await _showCustomDialog(
-          message: errorMessage,
-          isSuccess: false,
-        );
-      }
+      // -->> ✅ بداية الجزء الذي تم تعديله <<--
+      // إنشاء رسالة خطأ آمنة وعامة بدلاً من استخدام الخطأ الفعلي
+      final safeErrorMessage = localizations.translate('login_failed_network') ?? 'فشل تسجيل الدخول. يرجى التحقق من اتصالك والمحاولة مرة أخرى.';
+
+      // عرض الرسالة الآمنة للمستخدم
+      await _showCustomDialog(
+        message: safeErrorMessage,
+        isSuccess: false,
+      );
+      // -->> 🔚 نهاية الجزء الذي تم تعديله <<--
     }
   }
   Future<void> _showCustomDialog({
@@ -96,7 +95,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final localizations = AppLocalizations.of(context)!;
 
-    // التأكد من عدم وجود dialogs أخرى مفتوحة
     while (Navigator.of(context).canPop() && ModalRoute.of(context)?.isActive != true) {
       Navigator.of(context).pop();
     }
@@ -105,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       barrierDismissible: false,
       barrierColor: Colors.black54,
-      useRootNavigator: true, // مهم جداً لتجنب التضارب
+      useRootNavigator: true,
       builder: (BuildContext dialogContext) {
         return PopScope(
           canPop: false,
@@ -184,7 +182,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 
-  // إضافة دالة لإعادة تعيين حالة الشاشة عند العودة إليها
   @override
   void initState() {
     super.initState();
@@ -198,9 +195,6 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _isLoading = false;
       });
-      // عدم مسح النصوص لتسهيل إعادة المحاولة للمستخدم
-      // _userCodeController.clear();
-      // _passwordController.clear();
     }
   }
 
@@ -304,7 +298,7 @@ class _LoginScreenState extends State<LoginScreen> {
           keyboardType: TextInputType.number,
           style: const TextStyle(color: Colors.black87),
           textDirection: TextDirection.ltr,
-          enabled: !_isLoading, // تعطيل الحقول أثناء التحميل
+          enabled: !_isLoading,
           decoration: _inputDecoration(
             hint: localizations.translate('userCodeHint'),
             icon: Icons.supervised_user_circle_rounded,
@@ -325,7 +319,7 @@ class _LoginScreenState extends State<LoginScreen> {
           style: const TextStyle(color: Colors.black87),
           obscureText: _obscurePassword,
           textDirection: TextDirection.ltr,
-          enabled: !_isLoading, // تعطيل الحقول أثناء التحميل
+          enabled: !_isLoading,
           decoration: _inputDecoration(
             hint: localizations.translate('passwordHint'),
             icon: Icons.lock,

@@ -222,26 +222,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // إغلاق مؤشر التحميل
         Navigator.of(context, rootNavigator: true).pop();
-
+        /*
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(localizations.translate('workInProgress')!),
             backgroundColor: const Color(0xFF6C63FF),
           ),
-        );
+        );*/
       }
-    } catch (e) {
+
+    } catch (e, stackTrace) { // أضفنا stackTrace لتتبع أفضل
       if (!mounted) return;
+
+      // (مهم للمطور) طباعة الخطأ الفعلي في الـ Debug Console فقط
+      // هذا السطر لن يظهر للمستخدم النهائي في نسخة الـ release
+      print('An error occurred in _handleModuleTap: $e');
+      print('Stack trace: $stackTrace');
 
       // إغلاق مؤشر التحميل في حالة الخطأ
       Navigator.of(context, rootNavigator: true).pop();
 
+      // ✅ الحل: عرض رسالة خطأ عامة وثابتة للمستخدم
       _showInfoDialog(
         title: localizations.translate('error')!,
-        message: e.toString(),
+        // استخدم رسالة عامة من ملفات الترجمة أو رسالة ثابتة
+        message: localizations.translate('general_error_message') ?? 'حدث خطأ ما، يرجى المحاولة مرة أخرى.',
         isSuccess: false,
       );
     } finally {
+
       if (mounted) {
         setState(() {
           isLoading = false;

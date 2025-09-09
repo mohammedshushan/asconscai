@@ -1,4 +1,4 @@
-import 'package:asconscai/screens/approvals/pending_permissions_screen.dart'; // ### إضافة جديدة
+import 'package:asconscai/screens/approvals/pending_permissions_screen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -21,7 +21,7 @@ class ApprovalsMainScreen extends StatefulWidget {
 class _ApprovalsMainScreenState extends State<ApprovalsMainScreen> {
   final ApprovalsService _approvalsService = ApprovalsService();
   late Future<int> _pendingVacationsCount;
-  late Future<int> _pendingPermissionsCount; // ### إضافة جديدة
+  late Future<int> _pendingPermissionsCount;
 
   @override
   void initState() {
@@ -32,7 +32,7 @@ class _ApprovalsMainScreenState extends State<ApprovalsMainScreen> {
   void _loadCounts() {
     setState(() {
       _pendingVacationsCount = _approvalsService.getPendingVacationRequests(widget.user.usersCode.toString()).then((list) => list.length);
-      _pendingPermissionsCount = _approvalsService.getPendingPermissionsCount(widget.user.usersCode.toString()); // ### إضافة جديدة
+      _pendingPermissionsCount = _approvalsService.getPendingPermissionsCount(widget.user.usersCode.toString());
     });
   }
 
@@ -41,7 +41,6 @@ class _ApprovalsMainScreenState extends State<ApprovalsMainScreen> {
     if (!connectivityResult.contains(ConnectivityResult.none)) {
       if (mounted) {
         await Navigator.push(context, MaterialPageRoute(builder: (_) => page));
-        // تحديث العدادات عند العودة من أي صفحة
         _loadCounts();
       }
     } else {
@@ -119,28 +118,22 @@ class _ApprovalsMainScreenState extends State<ApprovalsMainScreen> {
           _buildDashboardCard(
             context:context,
             title: localizations.translate('loan_requests')!,
-            future: Future.value(5), // لا يزال ثابت كما طلبت
+            future: Future.value(5), // ثابت
             icon: Iconsax.dollar_circle,
             color: const Color(0xFF00CDAC).withOpacity(.5),
           ),
           const SizedBox(width: 16),
-          // ### START: التعديل الرئيسي هنا ###
           _buildDashboardCard(
             context:context,
             title: localizations.translate('permission_requests')!,
-            future: _pendingPermissionsCount, // تم التغيير
+            future: _pendingPermissionsCount,
             icon: Iconsax.clock,
             color: const Color(0xFFEE0342).withOpacity(.5),
           ),
-          // ### END: التعديل الرئيسي هنا ###
         ],
       ),
     );
   }
-
-  // باقي الكود كما هو بدون تغيير
-  // ...
-  // =========================================================================
 
   Widget _buildDashboardCard({
     required BuildContext context,
@@ -179,6 +172,14 @@ class _ApprovalsMainScreenState extends State<ApprovalsMainScreen> {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2));
                       }
+                      // -->> ✅ بداية الجزء الذي تم تعديله <<--
+                      if (snapshot.hasError) {
+                        // (للمطور) طباعة الخطأ
+                        print("Error loading approval count: ${snapshot.error}");
+                        // عرض علامة خطأ للمستخدم
+                        return const Icon(Icons.error_outline, color: Colors.white, size: 28);
+                      }
+                      // -->> 🔚 نهاية الجزء الذي تم تعديله <<--
                       return Text(
                         snapshot.data?.toString() ?? '0',
                         style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
@@ -216,7 +217,6 @@ class _ApprovalsMainScreenState extends State<ApprovalsMainScreen> {
         'color': const Color(0xFF009688),
         'onTap': () { /* No action yet */ },
       },
-      // ### START: التعديل الرئيسي هنا ###
       {
         'title': localizations.translate('approve_permissions')!,
         'subtitle': localizations.translate('approve_permissions_subtitle')!,
@@ -224,7 +224,6 @@ class _ApprovalsMainScreenState extends State<ApprovalsMainScreen> {
         'color': const Color(0xFFE91E63),
         'onTap': () => _navigateTo(context, PendingPermissionsScreen(user: widget.user)),
       },
-      // ### END: التعديل الرئيسي هنا ###
     ];
 
     return SliverList(
