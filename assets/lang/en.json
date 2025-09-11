@@ -224,5 +224,6 @@
   "exit_time": "Exit Time",
   "return_time": "Return Time",
   "failed_to_load_data": "failed to load data",
-  "please_check_connection": "please check connection"
+  "please_check_connection": "please check connection",
+  "invalid_credentials": "user code or Password incorrect"
 }

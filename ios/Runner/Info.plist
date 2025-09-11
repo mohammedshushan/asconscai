@@ -45,5 +45,27 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-</dict>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>نحتاج إلى الوصول لموقعك لتسجيل بصمة الحضور والانصراف بدقة وعرض موقعك الحالي على الخريطة.</string>
+
+	<key>NSCameraUsageDescription</key>
+	<string>نحتاج إلى إذن الوصول للكاميرا لتمكينك من التقاط صورة شخصية جديدة لملفك الشخصي.</string>
+
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>نحتاج إلى إذن الوصول لمعرض الصور لتمكينك من اختيار صورة شخصية جديدة لملفك الشخصي.</string>
+
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>google.navigation</string>
+		<string>geo</string>
+	</array>
+
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+
+	</dict>
 </plist>

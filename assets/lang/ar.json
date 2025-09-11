@@ -224,5 +224,6 @@
   "exit_time": "وقت الخروج",
   "return_time": "وقت العودة",
   "failed_to_load_data": "فشل  تحميل البيانات",
-  "please_check_connection": "تحقق من الاتصال بالانترنت"
+  "please_check_connection": "تحقق من الاتصال بالانترنت",
+  "invalid_credentials": "كود المستخدم أو كلمة المرور غير صحيحة."
 }

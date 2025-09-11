@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:asconscai/screens/attendance/my_current_location_screen.dart';
 import 'package:asconscai/screens/attendance/register_attendance_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -685,7 +686,12 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
         'title': localizations.translate('my_current_location')!,
         'icon': Icons.location_pin,
         'primaryColor': const Color(0xFF00B894),
-        'onTap': () {},
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => MyCurrentLocationScreen(user: widget.user)),
+          );
+        },
         'enabled': true,
       },
       {
