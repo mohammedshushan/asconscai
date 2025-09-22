@@ -108,6 +108,7 @@ class _NewLoanRequestScreenState extends State<NewLoanRequestScreen> {
       "loan_value_pys": double.parse(_loanValueController.text),
       "loan_instl_pys": _installmentValue,
       "auth_flag": 0,
+      "type_api": 6,
       "loan_nos": int.parse(_installmentsController.text),
       "notes": _notesController.text,
     };

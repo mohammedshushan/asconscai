@@ -225,5 +225,8 @@
   "return_time": "Return Time",
   "failed_to_load_data": "failed to load data",
   "please_check_connection": "please check connection",
-  "invalid_credentials": "user code or Password incorrect"
+  "invalid_credentials": "user code or Password incorrect",
+  "no_pending_loans": "No pending loan requests found",
+  "installment_count": "Installment Count",
+  "loan_start_date": "Loan Start Date"
 }

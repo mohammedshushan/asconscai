@@ -225,5 +225,8 @@
   "return_time": "وقت العودة",
   "failed_to_load_data": "فشل  تحميل البيانات",
   "please_check_connection": "تحقق من الاتصال بالانترنت",
-  "invalid_credentials": "كود المستخدم أو كلمة المرور غير صحيحة."
+  "invalid_credentials": "كود المستخدم أو كلمة المرور غير صحيحة.",
+  "no_pending_loans": "لا توجد طلبات سلف معلقة حالياً",
+  "installment_count": "عدد الأقساط",
+  "loan_start_date": "تاريخ بداية السلفة"
 }
