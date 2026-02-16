@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ProfileService {
-  static const String _baseUrl = 'http://49.12.83.111:7001/ords/ascon_scai/hrapi';
+  static const String _baseUrl = 'http://49.12.83.111:7003/ords/ascon_scai/hrapi';
   static const Duration _timeout = Duration(seconds: 30);
 
   // الحصول على بيانات الملف الشخصي

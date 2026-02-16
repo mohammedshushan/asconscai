@@ -1,5 +1,3 @@
-// مسار الملف: lib/models/module_model.dart
-
 class ModuleModel {
   final int id;
   final String nameAr;
@@ -15,11 +13,10 @@ class ModuleModel {
 
   factory ModuleModel.fromJson(Map<String, dynamic> json) {
     return ModuleModel(
-      id: json['id'],
-      nameAr: json['nama_a'],
-      // إزالة المسافات الزائدة والأسطر الجديدة
-      nameEn: (json['nama_e'] as String?)?.trim() ?? '',
-      order: json['ord'],
+      id: json['id'] ?? 0,
+      nameAr: (json['nam_a'] as String?)?.trim() ?? 'Unknown',  // ✅ nam_a بدل nama_a
+      nameEn: (json['name_e'] as String?)?.trim() ?? 'Unknown', // ✅ name_e بدل nama_e
+      order: json['ord'] ?? 0,
     );
   }
 }

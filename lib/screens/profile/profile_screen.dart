@@ -37,7 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _initializeProfile() {
-    _profileImageUrl = 'http://49.12.83.111:7001/ords/ascon_scai/hrapi/emp_photo/${widget.user}';
+    _profileImageUrl = 'http://49.12.83.111:7003/ords/ascon_scai/hrapi/emp_photo/${widget.user}';
     _loadProfileData();
   }
 
@@ -53,7 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       print('🔄 Loading profile data for user: ${widget.user}');
 
       final response = await http.get(
-        Uri.parse('http://49.12.83.111:7001/ords/ascon_scai/hrapi/emp_info/${widget.user}'),
+        Uri.parse('http://49.12.83.111:7003/ords/ascon_scai/hrapi/emp_info/${widget.user}'),
         headers: {'Content-Type': 'application/json'},
       ).timeout(const Duration(seconds: 10));
 
@@ -99,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       // فحص إضافي للتأكد من الاتصال الفعلي
       final result = await http.get(
-        Uri.parse('http://49.12.83.111:7001/ords/ascon_scai/hrapi/emp_info/${widget.user}'),
+        Uri.parse('http://49.12.83.111:7003/ords/ascon_scai/hrapi/emp_info/${widget.user}'),
       ).timeout(const Duration(seconds: 5));
 
       return result.statusCode == 200;
@@ -306,7 +306,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       print('📤 Photo length: ${base64Image.length}');
 
       final response = await http.post(
-        Uri.parse('http://49.12.83.111:7001/ords/ascon_scai/hrapi/emp_photo/${widget.user}'),
+        Uri.parse('http://49.12.83.111:7003/ords/ascon_scai/hrapi/emp_photo/${widget.user}'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -369,7 +369,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _currentImageError = null;
         // ✅ إضافة timestamp لفرض إعادة التحميل وتجنب الـ Cache
-        _profileImageUrl = 'http://49.12.83.111:7001/ords/ascon_scai/hrapi/emp_photo/${widget.user}?t=${DateTime.now().millisecondsSinceEpoch}';
+        _profileImageUrl = 'http://49.12.83.111:7003/ords/ascon_scai/hrapi/emp_photo/${widget.user}?t=${DateTime.now().millisecondsSinceEpoch}';
       });
     }
   }

@@ -50,7 +50,7 @@
         <package android:name="com.google.android.apps.maps" />
     </queries>
     <application
-        android:label="Ascon SCAi"
+        android:label="HR SYSTEM"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

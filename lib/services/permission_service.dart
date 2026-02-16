@@ -9,7 +9,7 @@ import 'package:collection/collection.dart';
 
 
 class PermissionService {
-  final String _baseUrl = "http://49.12.83.111:7001/ords/ascon_scai/hrapi";
+  final String _baseUrl = "http://49.12.83.111:7003/ords/ascon_scai/hrapi";
 
   // دالة موحدة للتعامل مع أخطاء الشبكة
   Future<T> _handleApiCall<T>(Future<T> Function() apiCall) async {

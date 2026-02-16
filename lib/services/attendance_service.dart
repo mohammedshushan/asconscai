@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http; // <-- استبدال dio بـ http
 import '../models/attendance_model.dart';
 
 class AttendanceService {
-  final String _baseUrl = 'http://49.12.83.111:7001/ords/ascon_scai/hrapi';
+  final String _baseUrl = 'http://49.12.83.111:7003/ords/ascon_scai/hrapi';
 
   // --- دوال جلب البيانات تبقى كما هي بدون تغيير ---
   Future<List<AttendanceMonthSummary>> getAttendanceMonths(int empCode) async {
