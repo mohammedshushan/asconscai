@@ -1,13 +1,8 @@
-
-
-
-
-
-
 import 'package:asconscai/screens/approvals/approvals_main_screen.dart';
 import 'package:asconscai/screens/attendance/attendance_main_screen.dart';
 import 'package:asconscai/screens/permissions/permissions_screen.dart';
 import 'package:asconscai/screens/profile/profile_screen.dart';
+import 'package:asconscai/screens/ai_assistant/ai_assistant_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -54,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     super.dispose();
   }
+
   // دالة محسّنة للتعامل مع كل الوحدات مع معالجة أفضل للأخطاء
   void _handleModuleTap(ModuleModel module) async {
     if (isLoading) return;
@@ -66,7 +62,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final moduleName = module.nameEn.toLowerCase();
 
     // التأكد من إغلاق أي dialogs مفتوحة
-    while (Navigator.of(context).canPop() && ModalRoute.of(context)?.isActive != true) {
+    while (Navigator.of(context).canPop() &&
+        ModalRoute.of(context)?.isActive != true) {
       Navigator.of(context).pop();
     }
 
@@ -75,37 +72,38 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       barrierDismissible: false,
       useRootNavigator: true,
-      builder: (BuildContext loadingContext) => PopScope(
-        canPop: false,
-        child: Material(
-          color: Colors.transparent,
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(color: Color(0xFF6C63FF)),
-                  SizedBox(height: 16),
-                  Text('جاري التحميل...', style: TextStyle(fontSize: 16)),
-                ],
+      builder:
+          (BuildContext loadingContext) => PopScope(
+            canPop: false,
+            child: Material(
+              color: Colors.transparent,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: Color(0xFF6C63FF)),
+                      SizedBox(height: 16),
+                      Text('جاري التحميل...', style: TextStyle(fontSize: 16)),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
     );
 
     try {
       if (moduleName.contains('vacation')) {
         final hasVacationAccess = await _vacationService.checkVacationAccess(
-            widget.user.usersCode.toString()
+          widget.user.usersCode.toString(),
         );
-          print('check is $hasVacationAccess');
+        print('check is $hasVacationAccess');
         if (!mounted) return;
 
         // إغلاق مؤشر التحميل
@@ -113,56 +111,52 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (!hasVacationAccess) {
           print('E2');
-          _showAccessDeniedDialog(localizations.translate('no_vacation_privileges')!);
+          _showAccessDeniedDialog(
+            localizations.translate('no_vacation_privileges')!,
+          );
           return;
         }
 
         final balances = await _vacationService.getVacationBalance(
-            widget.user.usersCode.toString()
+          widget.user.usersCode.toString(),
         );
         print('balances is $balances');
 
         if (!mounted) return;
 
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => VacationsScreen(user: widget.user)
-            ),
-          );
-
-
-      }
-    else if (moduleName.contains('permission')) {
-    final hasLoanAccess = await _loanService.checkLoanAccess(
-    widget.user.usersCode.toString()
-    );
-    if (!mounted) return;
-
-    // إغلاق مؤشر التحميل
-    Navigator.of(context, rootNavigator: true).pop();
-
-    if (!hasLoanAccess) {
-
-    _showAccessDeniedDialog(localizations.translate('no_loan_privileges')!);
-    return;
-    }
-
-    if (!mounted) return;
-
-
-    Navigator.push(
-    context,
-    MaterialPageRoute(
-    builder: (context) => PermissionsScreen(user: widget.user)
-    ),
-    );
-
-    }
-      else if (moduleName.contains('loan')) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VacationsScreen(user: widget.user),
+          ),
+        );
+      } else if (moduleName.contains('permission')) {
         final hasLoanAccess = await _loanService.checkLoanAccess(
-            widget.user.usersCode.toString()
+          widget.user.usersCode.toString(),
+        );
+        if (!mounted) return;
+
+        // إغلاق مؤشر التحميل
+        Navigator.of(context, rootNavigator: true).pop();
+
+        if (!hasLoanAccess) {
+          _showAccessDeniedDialog(
+            localizations.translate('no_loan_privileges')!,
+          );
+          return;
+        }
+
+        if (!mounted) return;
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PermissionsScreen(user: widget.user),
+          ),
+        );
+      } else if (moduleName.contains('loan')) {
+        final hasLoanAccess = await _loanService.checkLoanAccess(
+          widget.user.usersCode.toString(),
         );
 
         if (!mounted) return;
@@ -171,53 +165,75 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.of(context, rootNavigator: true).pop();
 
         if (!hasLoanAccess) {
-          _showAccessDeniedDialog(localizations.translate('no_loan_privileges')!);
+          _showAccessDeniedDialog(
+            localizations.translate('no_loan_privileges')!,
+          );
           return;
         }
 
         final balances = await _vacationService.getVacationBalance(
-            widget.user.usersCode.toString()
+          widget.user.usersCode.toString(),
         );
 
         if (!mounted) return;
 
-
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LoansScreen(user: widget.user),
+          ),
+        );
+      } else if (moduleName.contains('attendance')) {
+        // -->> ✅ الحل الرئيسي هنا <<--
+        // نقوم بإغلاق مؤشر التحميل قبل الانتقال للصفحة
+        if (mounted) Navigator.of(context, rootNavigator: true).pop();
+        await Future.delayed(
+          const Duration(milliseconds: 50),
+        ); // انتظار بسيط لضمان الإغلاق
+        if (mounted)
           Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) => LoansScreen(user: widget.user)
+              builder: (context) => AttendanceMainScreen(user: widget.user),
             ),
           );
-
-      }
-      else if(moduleName.contains('attendance')){
-
+      } else if (moduleName.contains('profile')) {
         // -->> ✅ الحل الرئيسي هنا <<--
         // نقوم بإغلاق مؤشر التحميل قبل الانتقال للصفحة
         if (mounted) Navigator.of(context, rootNavigator: true).pop();
-        await Future.delayed(const Duration(milliseconds: 50)); // انتظار بسيط لضمان الإغلاق
-        if (mounted) Navigator.push(context, MaterialPageRoute(builder: (context) => AttendanceMainScreen(user: widget.user)));
-
-
-      }
-    else if(moduleName.contains('profile')){
-    // -->> ✅ الحل الرئيسي هنا <<--
-    // نقوم بإغلاق مؤشر التحميل قبل الانتقال للصفحة
-    if (mounted) Navigator.of(context, rootNavigator: true).pop();
-    await Future.delayed(const Duration(milliseconds: 50)); // انتظار بسيط لضمان الإغلاق
-    if (mounted) Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileScreen(user: widget.user.usersCode)));
-
-
-    }
-      else if(moduleName.contains('approval')){
-
+        await Future.delayed(
+          const Duration(milliseconds: 50),
+        ); // انتظار بسيط لضمان الإغلاق
+        if (mounted)
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProfileScreen(user: widget.user.usersCode),
+            ),
+          );
+      } else if (moduleName.contains('approval')) {
         // -->> ✅ الحل الرئيسي هنا <<--
         // نقوم بإغلاق مؤشر التحميل قبل الانتقال للصفحة
         if (mounted) Navigator.of(context, rootNavigator: true).pop();
-        await Future.delayed(const Duration(milliseconds: 50)); // انتظار بسيط لضمان الإغلاق
-        if (mounted) Navigator.push(context, MaterialPageRoute(builder: (context) => ApprovalsMainScreen(user: widget.user)));
-      }
-       else {
+        await Future.delayed(
+          const Duration(milliseconds: 50),
+        ); // انتظار بسيط لضمان الإغلاق
+        if (mounted)
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ApprovalsMainScreen(user: widget.user),
+            ),
+          );
+      } else if (moduleName.contains('ai assistant')) {
+        if (mounted) Navigator.of(context, rootNavigator: true).pop();
+        await Future.delayed(const Duration(milliseconds: 50));
+        if (mounted)
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AiAssistantScreen()),
+          );
+      } else {
         if (!mounted) return;
 
         // إغلاق مؤشر التحميل
@@ -230,8 +246,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );*/
       }
-
-    } catch (e, stackTrace) { // أضفنا stackTrace لتتبع أفضل
+    } catch (e, stackTrace) {
+      // أضفنا stackTrace لتتبع أفضل
       if (!mounted) return;
 
       // (مهم للمطور) طباعة الخطأ الفعلي في الـ Debug Console فقط
@@ -246,11 +262,12 @@ class _HomeScreenState extends State<HomeScreen> {
       _showInfoDialog(
         title: localizations.translate('error')!,
         // استخدم رسالة عامة من ملفات الترجمة أو رسالة ثابتة
-        message: localizations.translate('general_error_message') ?? 'حدث خطأ ما، يرجى المحاولة مرة أخرى.',
+        message:
+            localizations.translate('general_error_message') ??
+            'حدث خطأ ما، يرجى المحاولة مرة أخرى.',
         isSuccess: false,
       );
     } finally {
-
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -273,15 +290,17 @@ class _HomeScreenState extends State<HomeScreen> {
         context: context,
         barrierDismissible: true,
         useRootNavigator: true,
-        builder: (context) => InfoDialog(
-          title: localizations.translate('no_access_title')!,
-          message: message,
-          isSuccess: false,
-          buttonText: localizations.translate('ok'),
-        ),
+        builder:
+            (context) => InfoDialog(
+              title: localizations.translate('no_access_title')!,
+              message: message,
+              isSuccess: false,
+              buttonText: localizations.translate('ok'),
+            ),
       );
     });
   }
+
   // دالة منفصلة لإظهار الرسائل العامة
   void _showInfoDialog({
     required String title,
@@ -300,12 +319,13 @@ class _HomeScreenState extends State<HomeScreen> {
         context: context,
         barrierDismissible: true,
         useRootNavigator: true,
-        builder: (context) => InfoDialog(
-          title: title,
-          message: message,
-          isSuccess: isSuccess,
-          buttonText: localizations.translate('ok'),
-        ),
+        builder:
+            (context) => InfoDialog(
+              title: title,
+              message: message,
+              isSuccess: isSuccess,
+              buttonText: localizations.translate('ok'),
+            ),
       );
     });
   }
@@ -320,6 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (name.contains('approval')) return Icons.fact_check_rounded;
     if (name.contains('report')) return Icons.donut_large_rounded;
     if (name.contains('permission')) return Icons.grid_view_rounded;
+    if (name.contains('ai assistant')) return Icons.smart_toy_rounded;
     return Icons.grid_view_rounded;
   }
 
@@ -358,10 +379,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'يرجى المحاولة مرة أخرى',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -391,7 +409,21 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
 
-          final modules = snapshot.data!;
+          final modules = List<ModuleModel>.from(snapshot.data!);
+          // إضافة وحدة المساعد الذكي يدوياً
+          if (!modules.any(
+            (m) => m.nameEn.toLowerCase().contains('ai assistant'),
+          )) {
+            modules.add(
+              ModuleModel(
+                id: 99,
+                nameAr: 'المساعد الذكي',
+                nameEn: 'AI Assistant',
+                order: modules.length + 1,
+              ),
+            );
+          }
+
           return CustomScrollView(
             slivers: [
               HomeAppBar(user: widget.user),
@@ -403,15 +435,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: modules.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.9,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.9,
+                          ),
                       itemBuilder: (context, index) {
                         final module = modules[index];
-                        final moduleName = isRtl ? module.nameAr : module.nameEn;
+                        final moduleName =
+                            isRtl ? module.nameAr : module.nameEn;
                         return AnimationConfiguration.staggeredGrid(
                           position: index,
                           duration: const Duration(milliseconds: 500),
@@ -448,12 +482,20 @@ class _HomeScreenState extends State<HomeScreen> {
     required int index,
   }) {
     final pastelColors = [
-      const Color(0xFFE3F2FD), const Color(0xFFFFF3E0), const Color(0xFFE8F5E9),
-      const Color(0xFFFCE4EC), const Color(0xFFF3E5F5), const Color(0xFFE0F7FA),
+      const Color(0xFFE3F2FD),
+      const Color(0xFFFFF3E0),
+      const Color(0xFFE8F5E9),
+      const Color(0xFFFCE4EC),
+      const Color(0xFFF3E5F5),
+      const Color(0xFFE0F7FA),
     ];
     final iconColors = [
-      const Color(0xFF1565C0), const Color(0xFFE65100), const Color(0xFF2E7D32),
-      const Color(0xFFAD1457), const Color(0xFF6A1B9A), const Color(0xFF006064),
+      const Color(0xFF1565C0),
+      const Color(0xFFE65100),
+      const Color(0xFF2E7D32),
+      const Color(0xFFAD1457),
+      const Color(0xFF6A1B9A),
+      const Color(0xFF006064),
     ];
     final bgColor = pastelColors[index % pastelColors.length];
     final iconColor = iconColors[index % iconColors.length];
@@ -501,6 +543,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
-
-

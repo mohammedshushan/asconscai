@@ -108,6 +108,8 @@ import 'api_service.dart';
 import '../utils/device_info_provider.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'dart:developer' as developer;
+
 class AuthService {
   final ApiService _apiService = ApiService();
   final DeviceInfoProvider _deviceInfoProvider = DeviceInfoProvider();
@@ -124,9 +126,7 @@ class AuthService {
 
       UserModel? user;
       try {
-        user = allUsers.firstWhere(
-              (u) => u.usersCode.toString() == userCode,
-        );
+        user = allUsers.firstWhere((u) => u.usersCode.toString() == userCode);
       } catch (e) {
         // إذا لم يتم العثور على المستخدم أو كانت كلمة المرور خطأ، نرسل نفس الخطأ
         // هذا أفضل من الناحية الأمنية لأنه لا يخبر المهاجم أي جزء من البيانات كان خاطئًا
@@ -149,7 +149,11 @@ class AuthService {
         rethrow;
       }
       // أي خطأ آخر يعتبر خطأ تقنيًا (مشكلة في السيرفر أو الشبكة)
-      print("A technical error occurred during login: $e");
+      developer.log(
+        "A technical error occurred during login: $e",
+        name: 'AuthService',
+        error: e,
+      );
       throw Exception('network_error');
     }
   }
@@ -159,13 +163,19 @@ class AuthService {
       final ip = await _deviceInfoProvider.getIpAddress();
       final deviceId = await _deviceInfoProvider.getDeviceUniqueId();
       final osUser = await _deviceInfoProvider.getOsUser();
-      final String formattedDate = DateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(DateTime.now().toUtc().add(Duration(hours: 1)));
+      final String formattedDate = DateFormat(
+        "yyyy-MM-dd'T'HH:mm:ss'Z'",
+      ).format(DateTime.now().toUtc().add(Duration(hours: 1)));
 
       Position? position;
       try {
         position = await _deviceInfoProvider.determinePosition();
       } catch (e) {
-        print("Could not get location for activity post: $e");
+        developer.log(
+          "Could not get location for activity post: $e",
+          name: 'AuthService',
+          error: e,
+        );
       }
 
       final Map<String, dynamic> loginData = {
@@ -178,11 +188,13 @@ class AuthService {
         "longitude": position?.longitude,
       };
 
-      print('data loginData $loginData');
       await _apiService.postLoginData(loginData);
-
     } catch (e) {
-      print("Could not post activity data: $e");
+      developer.log(
+        "Could not post activity data: $e",
+        name: 'AuthService',
+        error: e,
+      );
     }
   }
 

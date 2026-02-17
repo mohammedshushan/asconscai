@@ -228,5 +228,13 @@
   "invalid_credentials": "user code or Password incorrect",
   "no_pending_loans": "No pending loan requests found",
   "installment_count": "Installment Count",
-  "loan_start_date": "Loan Start Date"
+  "loan_start_date": "Loan Start Date",
+  "ai_assistant": "AI Assistant",
+  "ai_welcome": "Welcome! How can I help you today?",
+  "type_your_message": "Type your message...",
+  "listening": "Listening...",
+  "speak_now": "Speak now...",
+  "stop_listening": "Stop listening",
+  "voice_to_text_error": "Speech recognition failed",
+  "mic_permission_required": "Microphone permission required"
 }

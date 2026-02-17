@@ -55,6 +55,11 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>نحتاج إلى إذن الوصول لمعرض الصور لتمكينك من اختيار صورة شخصية جديدة لملفك الشخصي.</string>
 
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>نحتاج لإذن التعرف على الكلام لتمكينك من التحدث مع المساعد الذكي وتحويل صوتك إلى نص.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>نحتاج لإذن الوصول للميكروفون لتمكينك من تسجيل صوتك والتحدث مع المساعد الذكي.</string>
+
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>google.navigation</string>

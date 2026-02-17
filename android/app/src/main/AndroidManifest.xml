@@ -12,6 +12,7 @@
 
     <!-- للأندرويد 13+ -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!-- للكاميرا -->
     <uses-feature
@@ -48,6 +49,11 @@
 
         <!-- للخرائط العامة -->
         <package android:name="com.google.android.apps.maps" />
+        
+        <!-- للتعرف على الكلام -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
     </queries>
     <application
         android:label="HR SYSTEM"

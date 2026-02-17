@@ -48,13 +48,17 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
   }
 
   void _setupConnectivityListener() {
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      List<ConnectivityResult> results,
+    ) {
       _handleConnectivityChange(results);
     });
   }
 
   void _handleConnectivityChange(List<ConnectivityResult> results) async {
-    bool hasConnection = results.any((result) => result != ConnectivityResult.none);
+    bool hasConnection = results.any(
+      (result) => result != ConnectivityResult.none,
+    );
 
     if (!mounted) return;
 
@@ -87,8 +91,9 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
 
   Future<bool> _checkInternetConnection() async {
     try {
-      final response = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 5));
+      final response = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 5));
       return response.isNotEmpty && response[0].rawAddress.isNotEmpty;
     } catch (_) {
       return false;
@@ -110,7 +115,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
       // FutureBuilder سيعالج عرض الخطأ، يمكننا فقط طباعته هنا
       print("Error during manual retry: $e");
     } finally {
-      if(mounted) {
+      if (mounted) {
         setState(() {
           _isRetrying = false;
         });
@@ -123,26 +128,34 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
   Future<Map<String, dynamic>> _fetchDashboardData() async {
     try {
       final String currentMonth = DateFormat('yyyy-MM').format(DateTime.now());
-      final records = await _attendanceService.getAttendanceDetails(widget.user.usersCode, currentMonth);
+      final records = await _attendanceService.getAttendanceDetails(
+        widget.user.usersCode,
+        currentMonth,
+      );
 
       if (records.isEmpty) {
-        return {'latestRecord': null, 'checkInDays': 0, 'location': 'لا توجد بيانات'};
+        return {
+          'latestRecord': null,
+          'checkInDays': 0,
+          'location': 'لا توجد بيانات',
+        };
       }
 
       records.sort((a, b) => b.recordTime.compareTo(a.recordTime));
       final AttendanceRecord latestRecord = records.first;
 
-      final checkInDays = records
-          .where((r) => r.state == 0)
-          .map((r) => DateFormat('yyyy-MM-dd').format(r.workDay))
-          .toSet()
-          .length;
+      final checkInDays =
+          records
+              .where((r) => r.state == 0)
+              .map((r) => DateFormat('yyyy-MM-dd').format(r.workDay))
+              .toSet()
+              .length;
 
       String location;
       try {
         location = await _locationService.getAddressFromCoordinates(
-          latestRecord.latitude,
-          latestRecord.longitude,
+          double.parse(latestRecord.latitude),
+          double.parse(latestRecord.longitude),
         );
       } catch (e) {
         location = "خطأ في جلب العنوان";
@@ -184,10 +197,11 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
       }
 
       if (!launched) {
-        final Uri fallbackUri = Uri.parse('https://maps.google.com/?q=$lat,$lon');
+        final Uri fallbackUri = Uri.parse(
+          'https://maps.google.com/?q=$lat,$lon',
+        );
         await launchUrl(fallbackUri, mode: LaunchMode.inAppWebView);
       }
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -217,7 +231,10 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                 if (!_hasInternet && !_isRetrying)
                   Container(
                     padding: const EdgeInsets.all(16),
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.red.shade50,
                       borderRadius: BorderRadius.circular(12),
@@ -225,7 +242,11 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.wifi_off, color: Colors.red.shade600, size: 20),
+                        Icon(
+                          Icons.wifi_off,
+                          color: Colors.red.shade600,
+                          size: 20,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -246,7 +267,10 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                 if (_isRetrying)
                   Container(
                     padding: const EdgeInsets.all(16),
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.blue.shade50,
                       borderRadius: BorderRadius.circular(12),
@@ -278,13 +302,16 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                 FutureBuilder<Map<String, dynamic>>(
                   future: _dashboardDataFuture,
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting && !_isRetrying) {
+                    if (snapshot.connectionState == ConnectionState.waiting &&
+                        !_isRetrying) {
                       return _buildDashboardShimmer();
                     }
                     // -->> ✅ بداية الجزء الذي تم تعديله <<--
                     if (snapshot.hasError) {
                       // طباعة الخطأ الفعلي للمطور
-                      print("Error in attendance dashboard FutureBuilder: ${snapshot.error}");
+                      print(
+                        "Error in attendance dashboard FutureBuilder: ${snapshot.error}",
+                      );
                       // عرض واجهة خطأ آمنة
                       return Padding(
                         padding: const EdgeInsets.all(20.0),
@@ -297,10 +324,17 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                           ),
                           child: Column(
                             children: [
-                              Icon(Icons.error_outline, color: Colors.orange.shade600, size: 40),
+                              Icon(
+                                Icons.error_outline,
+                                color: Colors.orange.shade600,
+                                size: 40,
+                              ),
                               const SizedBox(height: 12),
                               Text(
-                                localizations.translate('failed_to_load_data') ?? 'فشل تحميل البيانات',
+                                localizations.translate(
+                                      'failed_to_load_data',
+                                    ) ??
+                                    'فشل تحميل البيانات',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.orange.shade800,
@@ -314,7 +348,10 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                                   backgroundColor: Colors.orange.shade600,
                                   foregroundColor: Colors.white,
                                 ),
-                                child: Text(localizations.translate('retry') ?? "إعادة المحاولة"),
+                                child: Text(
+                                  localizations.translate('retry') ??
+                                      "إعادة المحاولة",
+                                ),
                               ),
                             ],
                           ),
@@ -335,7 +372,10 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
             ),
           ),
           SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 20),
+            padding: EdgeInsets.symmetric(
+              horizontal: screenWidth * 0.05,
+              vertical: 20,
+            ),
             sliver: _buildMenuItems(localizations, screenWidth, context),
           ),
         ],
@@ -343,7 +383,10 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
     );
   }
 
-  Widget _buildDashboard(Map<String, dynamic> data, AppLocalizations localizations) {
+  Widget _buildDashboard(
+    Map<String, dynamic> data,
+    AppLocalizations localizations,
+  ) {
     final AttendanceRecord? record = data['latestRecord'];
     final int checkInDays = data['checkInDays'];
     final String location = data['location'];
@@ -362,7 +405,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
             blurRadius: 15,
             spreadRadius: 2,
             offset: const Offset(0, 5),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -377,19 +420,24 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: isCheckIn
-                          ? [Colors.green.shade400, Colors.green.shade300]
-                          : [Colors.orange.shade400, Colors.orange.shade300],
+                      colors:
+                          isCheckIn
+                              ? [Colors.green.shade400, Colors.green.shade300]
+                              : [
+                                Colors.orange.shade400,
+                                Colors.orange.shade300,
+                              ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: (isCheckIn ? Colors.green : Colors.orange).withOpacity(0.3),
+                        color: (isCheckIn ? Colors.green : Colors.orange)
+                            .withOpacity(0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
-                      )
+                      ),
                     ],
                   ),
                   child: Column(
@@ -421,8 +469,9 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                       Text(
                         record != null
                             ? (isCheckIn
-                            ? localizations.translate('check_in') ?? 'دخول'
-                            : localizations.translate('check_out') ?? 'خروج')
+                                ? localizations.translate('check_in') ?? 'دخول'
+                                : localizations.translate('check_out') ??
+                                    'خروج')
                             : 'لا يوجد',
                         style: const TextStyle(
                           fontSize: 14,
@@ -439,7 +488,10 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              DateFormat('EEEE',locale).format(record.recordTime),
+                              DateFormat(
+                                'EEEE',
+                                locale,
+                              ).format(record.recordTime),
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.white.withOpacity(0.9),
@@ -448,7 +500,9 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              DateFormat('yyyy/MM/dd').format(record.recordTime),
+                              DateFormat(
+                                'yyyy/MM/dd',
+                              ).format(record.recordTime),
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.white.withOpacity(0.9),
@@ -489,7 +543,10 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [const Color(0xFF6C5CE7).withOpacity(.5), const Color(0xFF5A4FCF).withOpacity(.5)],
+                      colors: [
+                        const Color(0xFF6C5CE7).withOpacity(.5),
+                        const Color(0xFF5A4FCF).withOpacity(.5),
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -499,7 +556,7 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                         color: const Color(0xFF6C5CE7).withOpacity(0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
-                      )
+                      ),
                     ],
                   ),
                   child: Column(
@@ -519,7 +576,8 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        localizations.translate('attendance_days') ?? 'أيام الحضور',
+                        localizations.translate('attendance_days') ??
+                            'أيام الحضور',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.white,
@@ -558,9 +616,9 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
           Text(
             localizations.translate('last_location') ?? 'آخر موقع للبصمة',
             style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade700
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
             ),
           ),
           const SizedBox(height: 12),
@@ -571,7 +629,13 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: InkWell(
-                  onTap: record != null ? () => _launchMaps(record.latitude, record.longitude) : null,
+                  onTap:
+                      record != null
+                          ? () => _launchMaps(
+                            double.parse(record.latitude),
+                            double.parse(record.longitude),
+                          )
+                          : null,
                   child: Text(
                     location,
                     style: const TextStyle(
@@ -620,8 +684,8 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                 child: Container(
                   height: 140,
                   decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(16)
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
               ),
@@ -631,8 +695,8 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
                 child: Container(
                   height: 140,
                   decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(16)
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
               ),
@@ -661,7 +725,11 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
     );
   }
 
-  SliverList _buildMenuItems(AppLocalizations localizations, double screenWidth, BuildContext context) {
+  SliverList _buildMenuItems(
+    AppLocalizations localizations,
+    double screenWidth,
+    BuildContext context,
+  ) {
     final screenHeight = MediaQuery.of(context).size.height;
     final List<Map<String, dynamic>> menuItems = [
       {
@@ -689,7 +757,9 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
         'onTap': () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => MyCurrentLocationScreen(user: widget.user)),
+            MaterialPageRoute(
+              builder: (_) => MyCurrentLocationScreen(user: widget.user),
+            ),
           );
         },
         'enabled': true,
@@ -699,7 +769,12 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
         'icon': Iconsax.document_text_1,
         'primaryColor': const Color(0xFF0984E3),
         'onTap': () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => AttendanceMonthsScreen(user: widget.user)));
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AttendanceMonthsScreen(user: widget.user),
+            ),
+          );
         },
         'enabled': true,
       },
@@ -713,27 +788,29 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
     ];
 
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-            (context, index) {
-          final item = menuItems[index];
-          return AnimationConfiguration.staggeredList(
-            position: index,
-            duration: const Duration(milliseconds: 800),
-            child: SlideAnimation(
-              verticalOffset: 100.0,
-              curve: Curves.easeOutBack,
-              child: FadeInAnimation(
-                curve: Curves.easeIn,
-                child: Container(
-                  margin: EdgeInsets.only(bottom: screenHeight * 0.025),
-                  child: _buildResponsiveCard(context: context, item: item, screenWidth: screenWidth, screenHeight: screenHeight),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final item = menuItems[index];
+        return AnimationConfiguration.staggeredList(
+          position: index,
+          duration: const Duration(milliseconds: 800),
+          child: SlideAnimation(
+            verticalOffset: 100.0,
+            curve: Curves.easeOutBack,
+            child: FadeInAnimation(
+              curve: Curves.easeIn,
+              child: Container(
+                margin: EdgeInsets.only(bottom: screenHeight * 0.025),
+                child: _buildResponsiveCard(
+                  context: context,
+                  item: item,
+                  screenWidth: screenWidth,
+                  screenHeight: screenHeight,
                 ),
               ),
             ),
-          );
-        },
-        childCount: menuItems.length,
-      ),
+          ),
+        );
+      }, childCount: menuItems.length),
     );
   }
 
@@ -750,28 +827,84 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
       onTap: item['enabled'] ? item['onTap'] as void Function()? : null,
       child: Container(
         height: cardHeight,
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: (item['primaryColor'] as Color).withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 8))]),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: (item['primaryColor'] as Color).withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
         child: Stack(
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: screenHeight * 0.02),
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.05,
+                vertical: screenHeight * 0.02,
+              ),
               child: Row(
                 children: [
                   Container(
                     width: isTablet ? 70 : 60,
                     height: isTablet ? 70 : 60,
-                    decoration: BoxDecoration(color: item['enabled'] ? item['primaryColor'] as Color : Colors.grey.shade400, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: item['enabled'] ? (item['primaryColor'] as Color).withOpacity(0.3) : Colors.grey.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 6))]),
-                    child: Icon(item['icon'] as IconData, color: Colors.white, size: isTablet ? 32 : 28),
+                    decoration: BoxDecoration(
+                      color:
+                          item['enabled']
+                              ? item['primaryColor'] as Color
+                              : Colors.grey.shade400,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              item['enabled']
+                                  ? (item['primaryColor'] as Color).withOpacity(
+                                    0.3,
+                                  )
+                                  : Colors.grey.withOpacity(0.2),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      item['icon'] as IconData,
+                      color: Colors.white,
+                      size: isTablet ? 32 : 28,
+                    ),
                   ),
                   SizedBox(width: screenWidth * 0.04),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [Text(item['title'] as String, style: TextStyle(fontSize: isTablet ? 18 : 16, fontWeight: FontWeight.bold, color: item['enabled'] ? const Color(0xFF2D3748) : Colors.grey.shade600), maxLines: 2, overflow: TextOverflow.ellipsis)],
+                      children: [
+                        Text(
+                          item['title'] as String,
+                          style: TextStyle(
+                            fontSize: isTablet ? 18 : 16,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                item['enabled']
+                                    ? const Color(0xFF2D3748)
+                                    : Colors.grey.shade600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
-                  Icon(Icons.arrow_forward_ios, color: item['enabled'] ? item['primaryColor'] as Color : Colors.grey.shade400, size: isTablet ? 20 : 16)
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color:
+                        item['enabled']
+                            ? item['primaryColor'] as Color
+                            : Colors.grey.shade400,
+                    size: isTablet ? 20 : 16,
+                  ),
                 ],
               ),
             ),
@@ -781,7 +914,10 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
     );
   }
 
-  SliverAppBar _buildModernAppBar(BuildContext context, AppLocalizations localizations) {
+  SliverAppBar _buildModernAppBar(
+    BuildContext context,
+    AppLocalizations localizations,
+  ) {
     return SliverAppBar(
       backgroundColor: const Color(0xFF6C63FF),
       pinned: true,
@@ -790,17 +926,36 @@ class _AttendanceMainScreenState extends State<AttendanceMainScreen> {
       iconTheme: const IconThemeData(color: Colors.white),
       expandedHeight: 80.0,
       elevation: 2,
-      shape: const ContinuousRectangleBorder(borderRadius: BorderRadius.only(bottomLeft: Radius.circular(80), bottomRight: Radius.circular(80))),
+      shape: const ContinuousRectangleBorder(
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(80),
+          bottomRight: Radius.circular(80),
+        ),
+      ),
       flexibleSpace: FlexibleSpaceBar(
-        title: Text(localizations.translate('attendance')!, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(
+          localizations.translate('attendance')!,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         centerTitle: true,
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.language_outlined, color: Colors.white, size: 26),
+          icon: const Icon(
+            Icons.language_outlined,
+            color: Colors.white,
+            size: 26,
+          ),
           onPressed: () {
             final currentLocale = Localizations.localeOf(context);
-            final newLocale = currentLocale.languageCode == 'en' ? const Locale('ar', '') : const Locale('en', '');
+            final newLocale =
+                currentLocale.languageCode == 'en'
+                    ? const Locale('ar', '')
+                    : const Locale('en', '');
             MyApp.of(context)?.changeLanguage(newLocale);
           },
         ),

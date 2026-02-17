@@ -22,7 +22,8 @@ class RegisterAttendanceScreen extends StatefulWidget {
   const RegisterAttendanceScreen({super.key, required this.user});
 
   @override
-  State<RegisterAttendanceScreen> createState() => _RegisterAttendanceScreenState();
+  State<RegisterAttendanceScreen> createState() =>
+      _RegisterAttendanceScreenState();
 }
 
 class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
@@ -47,7 +48,10 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
     super.initState();
     _initializeScreen();
     _setupConnectivityListener();
-    _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) => _updateTime());
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (Timer t) => _updateTime(),
+    );
   }
 
   @override
@@ -66,13 +70,17 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
   }
 
   void _setupConnectivityListener() {
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      List<ConnectivityResult> results,
+    ) {
       _handleConnectivityChange(results);
     });
   }
 
   void _handleConnectivityChange(List<ConnectivityResult> results) async {
-    bool hasConnection = results.any((result) => result != ConnectivityResult.none);
+    bool hasConnection = results.any(
+      (result) => result != ConnectivityResult.none,
+    );
 
     if (!mounted) return;
 
@@ -118,13 +126,11 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
       _currentIp = await DeviceInfoProvider().getIpAddress() ?? 'فشل جلب IP';
 
       final String currentMonth = DateFormat('yyyy-MM').format(DateTime.now());
-      final List<AttendanceRecord> records = await _attendanceService.getAttendanceDetails(
-          widget.user.usersCode,
-          currentMonth
-      );
+      final List<AttendanceRecord> records = await _attendanceService
+          .getAttendanceDetails(widget.user.usersCode, currentMonth);
 
       if (records.isNotEmpty) {
-        records.sort((a,b) => b.ser.compareTo(a.ser));
+        records.sort((a, b) => b.ser.compareTo(a.ser));
         _lastSerial = records.first.ser;
       }
 
@@ -135,7 +141,6 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
           _hasInternet = true;
         });
       }
-
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -156,8 +161,9 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
 
   Future<bool> _checkInternetConnection() async {
     try {
-      final List<InternetAddress> result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 5));
+      final List<InternetAddress> result = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 5));
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } catch (_) {
       return false;
@@ -175,22 +181,23 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
   // -->> 🔚 نهاية التعديل الوحيد والدقيق <<--
 
   Future<void> _initializeScreen() async {
-    setState(() { _isLoading = true; });
+    setState(() {
+      _isLoading = true;
+    });
     try {
       await _determinePosition();
 
       final String currentMonth = DateFormat('yyyy-MM').format(DateTime.now());
-      final List<AttendanceRecord> records = await _attendanceService.getAttendanceDetails(
-          widget.user.usersCode, currentMonth);
+      final List<AttendanceRecord> records = await _attendanceService
+          .getAttendanceDetails(widget.user.usersCode, currentMonth);
       if (records.isNotEmpty) {
-        records.sort((a,b) => b.ser.compareTo(a.ser));
+        records.sort((a, b) => b.ser.compareTo(a.ser));
         _lastSerial = records.first.ser;
       }
 
       _currentIp = await DeviceInfoProvider().getIpAddress() ?? 'فشل جلب IP';
-
     } catch (e) {
-      if(mounted) {
+      if (mounted) {
         StatusDialog.show(context, _getErrorMessage(e), isSuccess: false);
         setState(() {
           _currentAddress = "فشل تحديد الموقع";
@@ -199,8 +206,10 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
         });
       }
     } finally {
-      if(mounted) {
-        setState(() { _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -211,12 +220,16 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
       if (!serviceEnabled) {
         bool opened = await Geolocator.openLocationSettings();
         if (!opened) {
-          throw Exception('خدمة الموقع غير مفعلة. يرجى تفعيل GPS من إعدادات الجهاز');
+          throw Exception(
+            'خدمة الموقع غير مفعلة. يرجى تفعيل GPS من إعدادات الجهاز',
+          );
         }
         await Future.delayed(const Duration(seconds: 2));
         serviceEnabled = await Geolocator.isLocationServiceEnabled();
         if (!serviceEnabled) {
-          throw Exception('خدمة الموقع غير مفعلة. يرجى تفعيل GPS من إعدادات الجهاز');
+          throw Exception(
+            'خدمة الموقع غير مفعلة. يرجى تفعيل GPS من إعدادات الجهاز',
+          );
         }
       }
 
@@ -230,7 +243,9 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
 
       if (permission == LocationPermission.deniedForever) {
         bool opened = await Geolocator.openAppSettings();
-        throw Exception('صلاحية الموقع مرفوضة نهائياً. يرجى تفعيلها من إعدادات التطبيق');
+        throw Exception(
+          'صلاحية الموقع مرفوضة نهائياً. يرجى تفعيلها من إعدادات التطبيق',
+        );
       }
 
       if (mounted) {
@@ -240,11 +255,12 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
       }
 
       _currentPosition = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 0,
-            timeLimit: Duration(seconds: 15),
-          ));
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 0,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
 
       if (mounted) {
         setState(() {
@@ -255,8 +271,8 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
       // التعديل الرئيسي هنا - جلب العنوان مع معالجة أفضل للأخطاء
       try {
         final newAddress = await _locationService.getAddressFromCoordinates(
-            _currentPosition!.latitude,
-            _currentPosition!.longitude
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
         );
 
         if (mounted && newAddress.isNotEmpty) {
@@ -265,17 +281,18 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
           });
         } else if (mounted) {
           setState(() {
-            _currentAddress = "Lat: ${_currentPosition!.latitude.toStringAsFixed(6)}, Lng: ${_currentPosition!.longitude.toStringAsFixed(6)}";
+            _currentAddress =
+                "Lat: ${_currentPosition!.latitude.toStringAsFixed(6)}, Lng: ${_currentPosition!.longitude.toStringAsFixed(6)}";
           });
         }
       } catch (e) {
         if (mounted) {
           setState(() {
-            _currentAddress = "Lat: ${_currentPosition!.latitude.toStringAsFixed(6)}, Lng: ${_currentPosition!.longitude.toStringAsFixed(6)}";
+            _currentAddress =
+                "Lat: ${_currentPosition!.latitude.toStringAsFixed(6)}, Lng: ${_currentPosition!.longitude.toStringAsFixed(6)}";
           });
         }
       }
-
     } on LocationServiceDisabledException {
       throw Exception('خدمة الموقع معطلة. يرجى تفعيلها من إعدادات الجهاز');
     } on PermissionDeniedException {
@@ -287,11 +304,14 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
           _currentPosition = lastPosition;
           if (mounted) {
             setState(() {
-              _currentAddress = "Lat: ${lastPosition.latitude.toStringAsFixed(6)}, Lng: ${lastPosition.longitude.toStringAsFixed(6)} (آخر موقع معروف)";
+              _currentAddress =
+                  "Lat: ${lastPosition.latitude.toStringAsFixed(6)}, Lng: ${lastPosition.longitude.toStringAsFixed(6)} (آخر موقع معروف)";
             });
           }
         } else {
-          throw Exception('انتهت مهلة تحديد الموقع. تأكد من وجودك في مكان مفتوح وحاول مرة أخرى');
+          throw Exception(
+            'انتهت مهلة تحديد الموقع. تأكد من وجودك في مكان مفتوح وحاول مرة أخرى',
+          );
         }
       } else {
         rethrow;
@@ -301,11 +321,17 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
 
   Future<void> _submitAttendance() async {
     if (_currentPosition == null) {
-      StatusDialog.show(context, "لا يمكن تسجيل البصمة بدون تحديد الموقع.", isSuccess: false);
+      StatusDialog.show(
+        context,
+        "لا يمكن تسجيل البصمة بدون تحديد الموقع.",
+        isSuccess: false,
+      );
       return;
     }
 
-    setState(() { _isSubmitting = true; });
+    setState(() {
+      _isSubmitting = true;
+    });
     final localizations = AppLocalizations.of(context)!;
 
     try {
@@ -320,23 +346,32 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
         "work_day": DateFormat('yyyy-MM-dd').format(now),
         "record_time": "${DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(now)}Z",
         "type": 6,
-        "state": _selectedState
+        "state": _selectedState,
       };
 
-      await _attendanceService.postAttendanceRecord(widget.user.usersCode, data);
+      await _attendanceService.postAttendanceRecord(
+        widget.user.usersCode,
+        data,
+      );
 
-      if(mounted) {
-        StatusDialog.show(context, localizations.translate('attendance_recorded_successfully')!, isSuccess: true, duration: 2);
-        Navigator.pop(context,true);
+      if (mounted) {
+        StatusDialog.show(
+          context,
+          localizations.translate('attendance_recorded_successfully')!,
+          isSuccess: true,
+          duration: 2,
+        );
+        Navigator.pop(context, true);
       }
-
-    } catch(e) {
-      if(mounted) {
+    } catch (e) {
+      if (mounted) {
         StatusDialog.show(context, _getErrorMessage(e), isSuccess: false);
       }
     } finally {
-      if(mounted) {
-        setState(() { _isSubmitting = false; });
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
       }
     }
   }
@@ -367,7 +402,10 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
                     children: [
                       const SizedBox(height: 80),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
                         child: _buildStateToggle(localizations),
                       ),
                       Expanded(
@@ -403,7 +441,9 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
           if (_isSubmitting)
             Container(
               color: Colors.black.withOpacity(0.5),
-              child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
             ),
           if (_isRetrying)
             Positioned(
@@ -529,9 +569,9 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
                     const SizedBox(height: 4),
                     Text(
                       "• تأكد من تفعيل GPS في الإعدادات\n"
-                          "• اخرج إلى مكان مفتوح (بعيداً عن المباني)\n"
-                          "• تأكد من وجود اتصال إنترنت جيد\n"
-                          "• أعد تشغيل التطبيق إذا لزم الأمر",
+                      "• اخرج إلى مكان مفتوح (بعيداً عن المباني)\n"
+                      "• تأكد من وجود اتصال إنترنت جيد\n"
+                      "• أعد تشغيل التطبيق إذا لزم الأمر",
                       style: TextStyle(
                         color: Colors.orange.shade700,
                         fontSize: 10,
@@ -541,13 +581,17 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
                   ],
                 ),
               ),
-            )
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildTopSection(BuildContext context, AppLocalizations localizations, String today) {
+  Widget _buildTopSection(
+    BuildContext context,
+    AppLocalizations localizations,
+    String today,
+  ) {
     return Container(
       height: 250,
       width: double.infinity,
@@ -569,12 +613,16 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.language_outlined, color: Colors.white),
-                  onPressed: () => MyApp.of(context)?.changeLanguage(
-                      Localizations.localeOf(context).languageCode == 'en'
-                          ? const Locale('ar')
-                          : const Locale('en')
+                  icon: const Icon(
+                    Icons.language_outlined,
+                    color: Colors.white,
                   ),
+                  onPressed:
+                      () => MyApp.of(context)?.changeLanguage(
+                        Localizations.localeOf(context).languageCode == 'en'
+                            ? const Locale('ar')
+                            : const Locale('en'),
+                      ),
                 ),
               ],
             ),
@@ -606,7 +654,9 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
       child: Column(
         children: [
           Text(
-            locale == 'ar' ? widget.user.empName : widget.user.empNameE ?? widget.user.empName,
+            locale == 'ar'
+                ? widget.user.empName
+                : widget.user.empNameE ?? widget.user.empName,
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -646,10 +696,7 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
               Expanded(
                 child: Text(
                   _isLoading ? "جاري التحميل..." : _currentAddress,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade500,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -715,13 +762,16 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
         decoration: BoxDecoration(
           color: isSelected ? color : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ] : null,
+          boxShadow:
+              isSelected
+                  ? [
+                    BoxShadow(
+                      color: color.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                  : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -763,106 +813,118 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: _isLoading
-            ? Container(
-          color: Colors.grey.shade100,
-          child: const Center(
-              child: CircularProgressIndicator(color: Color(0xFF4A90E2))
-          ),
-        )
-            : Stack(
-          children: [
-            FlutterMap(
-              options: MapOptions(
-                initialCenter: _currentPosition != null
-                    ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
-                    : LatLng(0, 0),
-                initialZoom: 16.0,
-                onMapReady: () {
-                  if (_currentPosition != null) {
-                    _updateLocationAddress();
-                  }
-                },
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.all,
-                ),
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                ),
-                if (_currentPosition != null)
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                        width: 60,
-                        height: 60,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+        child:
+            _isLoading
+                ? Container(
+                  color: Colors.grey.shade100,
+                  child: const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF4A90E2)),
+                  ),
+                )
+                : Stack(
+                  children: [
+                    FlutterMap(
+                      options: MapOptions(
+                        initialCenter:
+                            _currentPosition != null
+                                ? LatLng(
+                                  _currentPosition!.latitude,
+                                  _currentPosition!.longitude,
+                                )
+                                : LatLng(0, 0),
+                        initialZoom: 16.0,
+                        onMapReady: () {
+                          if (_currentPosition != null) {
+                            _updateLocationAddress();
+                          }
+                        },
+                        interactionOptions: const InteractionOptions(
+                          flags: InteractiveFlag.all,
+                        ),
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.ascon.scai',
+                        ),
+                        if (_currentPosition != null)
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: LatLng(
+                                  _currentPosition!.latitude,
+                                  _currentPosition!.longitude,
+                                ),
+                                width: 60,
+                                height: 60,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.location_pin,
+                                    color: Color(0xFFFF6B6B),
+                                    size: 35,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                          child: const Icon(
-                            Icons.location_pin,
-                            color: Color(0xFFFF6B6B),
-                            size: 35,
+                      ],
+                    ),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 30.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0C73DA).withOpacity(0.8),
+                                blurRadius: 10,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onLongPress: _submitAttendance,
+                            style: ElevatedButton.styleFrom(
+                              shape: const CircleBorder(),
+                              padding: const EdgeInsets.all(22),
+                              backgroundColor: const Color(0xFF6C63FF),
+                              elevation: 0,
+                            ),
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    localizations.translate('act')!,
+                                  ),
+                                  backgroundColor: const Color(0xFFEE0342),
+                                ),
+                              );
+                            },
+                            child: const Icon(
+                              Icons.fingerprint,
+                              color: Colors.white,
+                              size: 40,
+                            ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
-              ],
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 30.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0C73DA).withOpacity(0.8),
-                        blurRadius: 10,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: ElevatedButton(
-                    onLongPress: _submitAttendance,
-                    style: ElevatedButton.styleFrom(
-                      shape: const CircleBorder(),
-                      padding: const EdgeInsets.all(22),
-                      backgroundColor: const Color(0xFF6C63FF),
-                      elevation: 0,
                     ),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(localizations.translate('act')!),
-                          backgroundColor: const Color(0xFFEE0342),
-                        ),
-                      );
-                    },
-                    child: const Icon(
-                      Icons.fingerprint,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  ),
+                  ],
                 ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -884,7 +946,8 @@ class _RegisterAttendanceScreenState extends State<RegisterAttendanceScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _currentAddress = "Lat: ${_currentPosition!.latitude.toStringAsFixed(6)}, Lng: ${_currentPosition!.longitude.toStringAsFixed(6)}";
+          _currentAddress =
+              "Lat: ${_currentPosition!.latitude.toStringAsFixed(6)}, Lng: ${_currentPosition!.longitude.toStringAsFixed(6)}";
         });
       }
     }

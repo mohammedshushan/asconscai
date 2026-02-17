@@ -128,93 +128,68 @@ class ApprovalsService {
 }
 */
 import 'dart:convert';
-import 'package:flutter/foundation.dart'; // Required for debugPrint
 import 'package:http/http.dart' as http;
 import '../models/pending_loan_model.dart';
 import '../models/pending_permission_model.dart';
 import '../models/pending_vacation_model.dart';
+import 'logging_service.dart';
 
 class ApprovalsService {
   final String _baseUrl = 'http://49.12.83.111:7003/ords/ascon_scai/hrapi';
+  final http.Client _client;
 
-  // Helper for pretty printing JSON
-  static void _prettyPrintJson(String input) {
-    try {
-      const JsonDecoder decoder = JsonDecoder();
-      const JsonEncoder encoder = JsonEncoder.withIndent('  ');
-      final dynamic object = decoder.convert(input);
-      final dynamic prettyString = encoder.convert(object);
-      prettyString.split('\n').forEach((dynamic element) => debugPrint(element));
-    } catch (e) {
-      debugPrint(input); // If it's not a valid JSON, print as is
-    }
-  }
+  ApprovalsService({http.Client? client})
+    : _client = LoggingClient(client ?? http.Client());
 
   // ==================== Vacation Approvals ====================
-  Future<List<PendingVacationRequest>> getPendingVacationRequests(String userCode) async {
+  Future<List<PendingVacationRequest>> getPendingVacationRequests(
+    String userCode,
+  ) async {
     final url = Uri.parse('$_baseUrl/get_vcnc_auth_user/$userCode');
-    print('🔄 [API Call] getPendingVacationRequests for user: $userCode');
-    print('  - URL: $url');
     try {
-      final response = await http.get(url);
-      print('  - Response Status: ${response.statusCode}');
+      final response = await _client.get(url);
       if (response.statusCode == 200) {
-        print('  - ✅ Success');
         final data = json.decode(response.body);
         final List<dynamic> items = data['items'];
-        return items.map((item) => PendingVacationRequest.fromJson(item)).toList();
+        return items
+            .map((item) => PendingVacationRequest.fromJson(item))
+            .toList();
       } else {
-        print('  - ❌ Failure');
-        debugPrint('  - Response Body:');
-        _prettyPrintJson(response.body);
         throw Exception('Failed to load pending vacation requests');
       }
     } catch (e) {
-      print('  - ❌ Exception: $e');
       rethrow;
     }
   }
 
   Future<void> updateVacationStatus(Map<String, dynamic> data) async {
     final url = Uri.parse('$_baseUrl/update_status_vcnc');
-    print('🔄 [API Call] updateVacationStatus');
-    print('  - URL: $url');
-    print('  - 📤 Payload:');
-    _prettyPrintJson(json.encode(data));
     try {
-      final response = await http.put(url, headers: {'Content-Type': 'application/json'}, body: json.encode(data));
-      print('  - Response Status: ${response.statusCode}');
+      final response = await _client.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(data),
+      );
       if (response.statusCode != 200) {
-        print('  - ❌ Failure');
-        debugPrint('  - Response Body:');
-        _prettyPrintJson(response.body);
         throw Exception('Failed to update vacation status');
       }
-      print('  - ✅ Success');
-    } catch(e) {
-      print('  - ❌ Exception: $e');
+    } catch (e) {
       rethrow;
     }
   }
 
   Future<void> addVacationToOrders(Map<String, dynamic> data) async {
     final url = Uri.parse('$_baseUrl/add_vcnc_orders');
-    print('🔄 [API Call] addVacationToOrders');
-    print('  - URL: $url');
-    print('  - 📤 Payload:');
-    _prettyPrintJson(json.encode(data));
     try {
-      final response = await http.put(url, headers: {'Content-Type': 'application/json'}, body: json.encode(data));
-      print('  - Response Status: ${response.statusCode}');
+      final response = await _client.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(data),
+      );
       if (response.statusCode != 200) {
-        print('  - ❌ Failure');
-        debugPrint('  - Response Body:');
-        _prettyPrintJson(response.body);
         throw Exception('Failed to add vacation to orders');
       }
-      print('  - ✅ Success');
-    } catch(e) {
-      print('  - ❌ Exception: $e');
+    } catch (e) {
       rethrow;
     }
   }
@@ -222,69 +197,51 @@ class ApprovalsService {
   // ==================== Permission Approvals ====================
   Future<int> getPendingPermissionsCount(String userCode) async {
     final url = Uri.parse('$_baseUrl/get_exist_auth_user/$userCode');
-    print('🔄 [API Call] getPendingPermissionsCount for user: $userCode');
-    print('  - URL: $url');
     try {
-      final response = await http.get(url);
-      print('  - Response Status: ${response.statusCode}');
+      final response = await _client.get(url);
       if (response.statusCode == 200) {
-        print('  - ✅ Success');
         final data = json.decode(response.body);
         return data['count'] ?? 0;
       } else {
-        print('  - ❌ Failure');
-        debugPrint('  - Response Body:');
-        _prettyPrintJson(response.body);
         throw Exception('Failed to load pending permissions count');
       }
     } catch (e) {
-      print('  - ❌ Exception: $e');
       rethrow;
     }
   }
 
-  Future<List<PendingPermissionRequest>> getPendingPermissionRequests(String userCode) async {
+  Future<List<PendingPermissionRequest>> getPendingPermissionRequests(
+    String userCode,
+  ) async {
     final url = Uri.parse('$_baseUrl/get_exist_auth_user/$userCode');
-    print('🔄 [API Call] getPendingPermissionRequests for user: $userCode');
-    print('  - URL: $url');
     try {
-      final response = await http.get(url);
-      print('  - Response Status: ${response.statusCode}');
+      final response = await _client.get(url);
       if (response.statusCode == 200) {
-        print('  - ✅ Success');
         final data = json.decode(response.body);
         final List<dynamic> items = data['items'];
-        return items.map((item) => PendingPermissionRequest.fromJson(item)).toList();
+        return items
+            .map((item) => PendingPermissionRequest.fromJson(item))
+            .toList();
       } else {
-        print('  - ❌ Failure');
-        debugPrint('  - Response Body:');
-        _prettyPrintJson(response.body);
         throw Exception('Failed to load pending permission requests');
       }
     } catch (e) {
-      print('  - ❌ Exception: $e');
       rethrow;
     }
   }
 
   Future<void> updatePermissionStatus(Map<String, dynamic> data) async {
     final url = Uri.parse('$_baseUrl/update_status_exist');
-    print('🔄 [API Call] updatePermissionStatus');
-    print('  - URL: $url');
-    print('  - 📤 Payload:');
-    _prettyPrintJson(json.encode(data));
     try {
-      final response = await http.put(url, headers: {'Content-Type': 'application/json'}, body: json.encode(data));
-      print('  - Response Status: ${response.statusCode}');
+      final response = await _client.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(data),
+      );
       if (response.statusCode != 200) {
-        print('  - ❌ Failure');
-        debugPrint('  - Response Body:');
-        _prettyPrintJson(response.body);
         throw Exception('Failed to update permission status');
       }
-      print('  - ✅ Success');
-    } catch(e) {
-      print('  - ❌ Exception: $e');
+    } catch (e) {
       rethrow;
     }
   }
@@ -292,22 +249,16 @@ class ApprovalsService {
   Future<void> updatePermissionInOrders(Map<String, dynamic> data) async {
     final empCode = data['emp_code'];
     final url = Uri.parse('$_baseUrl/get_post_exist_request/$empCode');
-    print('🔄 [API Call] updatePermissionInOrders');
-    print('  - URL: $url');
-    print('  - 📤 Payload:');
-    _prettyPrintJson(json.encode(data));
     try {
-      final response = await http.put(url, headers: {'Content-Type': 'application/json'}, body: json.encode(data));
-      print('  - Response Status: ${response.statusCode}');
+      final response = await _client.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(data),
+      );
       if (response.statusCode != 200) {
-        print('  - ❌ Failure');
-        debugPrint('  - Response Body:');
-        _prettyPrintJson(response.body);
         throw Exception('Failed to update permission in orders');
       }
-      print('  - ✅ Success');
     } catch (e) {
-      print('  - ❌ Exception: $e');
       rethrow;
     }
   }
@@ -315,91 +266,67 @@ class ApprovalsService {
   // ==================== Loan Approvals ====================
   Future<int> getPendingLoansCount(String userCode) async {
     final url = Uri.parse('$_baseUrl/get_loan_auth_user/$userCode');
-    print('🔄 [API Call] getPendingLoansCount for user: $userCode');
-    print('  - URL: $url');
     try {
-      final response = await http.get(url);
-      print('  - Response Status: ${response.statusCode}');
+      final response = await _client.get(url);
       if (response.statusCode == 200) {
-        print('  - ✅ Success');
         final data = json.decode(response.body);
         return data['count'] ?? 0;
       } else {
-        print('  - ❌ Failure');
-        debugPrint('  - Response Body:');
-        _prettyPrintJson(response.body);
         throw Exception('Failed to load pending loans count');
       }
     } catch (e) {
-      print('  - ❌ Exception: $e');
       rethrow;
     }
   }
 
-  Future<List<PendingLoanRequest>> getPendingLoanRequests(String userCode) async {
+  Future<List<PendingLoanRequest>> getPendingLoanRequests(
+    String userCode,
+  ) async {
     final url = Uri.parse('$_baseUrl/get_loan_auth_user/$userCode');
-    print('🔄 [API Call] getPendingLoanRequests for user: $userCode');
-    print('  - URL: $url');
     try {
-      final response = await http.get(url);
-      print('  - Response Status: ${response.statusCode}');
+      final response = await _client.get(url);
       if (response.statusCode == 200) {
-        print('  - ✅ Success');
         final data = json.decode(response.body);
         final List<dynamic> items = data['items'];
         return items.map((item) => PendingLoanRequest.fromJson(item)).toList();
       } else {
-        print('  - ❌ Failure');
-        debugPrint('  - Response Body:');
-        _prettyPrintJson(response.body);
         throw Exception('Failed to load pending loan requests');
       }
-    } catch(e) {
-      print('  - ❌ Exception: $e');
+    } catch (e) {
       rethrow;
     }
   }
 
   Future<void> updateLoanStatus(Map<String, dynamic> data) async {
     final url = Uri.parse('$_baseUrl/update_loan_status');
-    print('🔄 [API Call] updateLoanStatus');
-    print('  - URL: $url');
-    print('  - 📤 Payload:');
-    _prettyPrintJson(json.encode(data));
     try {
-      final response = await http.put(url, headers: {'Content-Type': 'application/json'}, body: json.encode(data));
-      print('  - Response Status: ${response.statusCode}');
+      final response = await _client.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(data),
+      );
       if (response.statusCode != 200) {
-        print('  - ❌ Failure');
-        debugPrint('  - Response Body:');
-        _prettyPrintJson(response.body);
         throw Exception('Failed to update loan status. Body: ${response.body}');
       }
-      print('  - ✅ Success');
-    } catch(e) {
-      print('  - ❌ Exception: $e');
+    } catch (e) {
       rethrow;
     }
   }
 
   Future<void> updateLoanInOrders(Map<String, dynamic> data) async {
     final url = Uri.parse('$_baseUrl/add_loan_request');
-    print('🔄 [API Call] updateLoanInOrders');
-    print('  - URL: $url');
-    print('  - 📤 Payload:');
-    _prettyPrintJson(json.encode(data));
     try {
-      final response = await http.put(url, headers: {'Content-Type': 'application/json'}, body: json.encode(data));
-      print('  - Response Status: ${response.statusCode}');
+      final response = await _client.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(data),
+      );
       if (response.statusCode != 200) {
-        print('  - ❌ Failure');
-        debugPrint('  - Response Body:');
-        _prettyPrintJson(response.body);
-        throw Exception('Failed to update loan in orders. Body: ${response.body}');
+        throw Exception(
+          'Failed to update loan in orders. Body: ${response.body}',
+        );
       }
-      print('  - ✅ Success');
-    } catch(e) {
-      print('  - ❌ Exception: $e');
+    } catch (e) {
       rethrow;
     }
   }

@@ -14,7 +14,8 @@ class MyCurrentLocationScreen extends StatefulWidget {
   const MyCurrentLocationScreen({super.key, required this.user});
 
   @override
-  State<MyCurrentLocationScreen> createState() => _MyCurrentLocationScreenState();
+  State<MyCurrentLocationScreen> createState() =>
+      _MyCurrentLocationScreenState();
 }
 
 class _MyCurrentLocationScreenState extends State<MyCurrentLocationScreen> {
@@ -31,7 +32,10 @@ class _MyCurrentLocationScreenState extends State<MyCurrentLocationScreen> {
   void initState() {
     super.initState();
     _initializeLocation();
-    _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) => _updateTime());
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (Timer t) => _updateTime(),
+    );
   }
 
   @override
@@ -76,14 +80,16 @@ class _MyCurrentLocationScreenState extends State<MyCurrentLocationScreen> {
       }
 
       // جلب الموقع الحالي
-      if (mounted) setState(() => _currentAddress = "جاري تحديد الموقع الدقيق...");
+      if (mounted)
+        setState(() => _currentAddress = "جاري تحديد الموقع الدقيق...");
       _currentPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 20),
       );
 
       // جلب العنوان من الإحداثيات
-      if (mounted) setState(() => _currentAddress = "جاري جلب تفاصيل العنوان...");
+      if (mounted)
+        setState(() => _currentAddress = "جاري جلب تفاصيل العنوان...");
       final newAddress = await _locationService.getAddressFromCoordinates(
         _currentPosition!.latitude,
         _currentPosition!.longitude,
@@ -91,10 +97,10 @@ class _MyCurrentLocationScreenState extends State<MyCurrentLocationScreen> {
 
       if (mounted) {
         setState(() {
-          _currentAddress = newAddress.isNotEmpty ? newAddress : "تعذر جلب اسم العنوان";
+          _currentAddress =
+              newAddress.isNotEmpty ? newAddress : "تعذر جلب اسم العنوان";
         });
       }
-
     } catch (e) {
       // (للمطور) طباعة الخطأ الفعلي
       print("Error in MyCurrentLocationScreen: $e");
@@ -103,13 +109,19 @@ class _MyCurrentLocationScreenState extends State<MyCurrentLocationScreen> {
           // تحديد رسالة خطأ آمنة بناءً على نوع الخطأ
           final errorString = e.toString();
           if (errorString.contains('location_service_disabled')) {
-            _errorMessage = "خدمة الموقع غير مفعلة. يرجى تفعيل GPS والمحاولة مرة أخرى.";
+            _errorMessage =
+                "خدمة الموقع غير مفعلة. يرجى تفعيل GPS والمحاولة مرة أخرى.";
           } else if (errorString.contains('location_permission_denied')) {
-            _errorMessage = "تم رفض صلاحية الوصول للموقع. لا يمكن عرض الموقع الحالي.";
-          } else if (errorString.contains('location_permission_denied_forever')) {
-            _errorMessage = "تم رفض صلاحية الموقع بشكل دائم. يرجى تفعيلها من إعدادات التطبيق.";
+            _errorMessage =
+                "تم رفض صلاحية الوصول للموقع. لا يمكن عرض الموقع الحالي.";
+          } else if (errorString.contains(
+            'location_permission_denied_forever',
+          )) {
+            _errorMessage =
+                "تم رفض صلاحية الموقع بشكل دائم. يرجى تفعيلها من إعدادات التطبيق.";
           } else {
-            _errorMessage = "فشل تحديد الموقع. يرجى التحقق من اتصالك بالإنترنت وتفعيل GPS.";
+            _errorMessage =
+                "فشل تحديد الموقع. يرجى التحقق من اتصالك بالإنترنت وتفعيل GPS.";
           }
         });
       }
@@ -177,7 +189,10 @@ class _MyCurrentLocationScreenState extends State<MyCurrentLocationScreen> {
     );
   }
 
-  Widget _buildTopSection(BuildContext context, AppLocalizations localizations) {
+  Widget _buildTopSection(
+    BuildContext context,
+    AppLocalizations localizations,
+  ) {
     return Container(
       height: 250,
       width: double.infinity,
@@ -197,7 +212,8 @@ class _MyCurrentLocationScreenState extends State<MyCurrentLocationScreen> {
               iconTheme: const IconThemeData(color: Colors.white),
               centerTitle: true,
               title: Text(
-                localizations.translate('my_current_location') ?? 'موقعي الحالي',
+                localizations.translate('my_current_location') ??
+                    'موقعي الحالي',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -234,18 +250,30 @@ class _MyCurrentLocationScreenState extends State<MyCurrentLocationScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Iconsax.calendar_1, size: 16, color: Color(0xFF4A90E2)),
+              const Icon(
+                Iconsax.calendar_1,
+                size: 16,
+                color: Color(0xFF4A90E2),
+              ),
               const SizedBox(width: 8),
               Text(
                 today,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF4A90E2), fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF4A90E2),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(width: 12),
               const Icon(Iconsax.clock, size: 16, color: Color(0xFF4A90E2)),
               const SizedBox(width: 8),
               Text(
                 _currentTime,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF4A90E2), fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF4A90E2),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -258,12 +286,17 @@ class _MyCurrentLocationScreenState extends State<MyCurrentLocationScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  _isLoading ? "جاري التحميل..." : (_errorMessage ?? _currentAddress),
+                  _isLoading
+                      ? "جاري التحميل..."
+                      : (_errorMessage ?? _currentAddress),
                   style: TextStyle(
-                      fontSize: 14,
-                      color: _errorMessage != null ? Colors.red.shade700 : Colors.black87,
-                      fontWeight: FontWeight.w500,
-                      height: 1.5
+                    fontSize: 14,
+                    color:
+                        _errorMessage != null
+                            ? Colors.red.shade700
+                            : Colors.black87,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -281,7 +314,11 @@ class _MyCurrentLocationScreenState extends State<MyCurrentLocationScreen> {
               ),
               child: Text(
                 'Lat: ${_currentPosition!.latitude.toStringAsFixed(5)}, Long: ${_currentPosition!.longitude.toStringAsFixed(5)}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -292,7 +329,9 @@ class _MyCurrentLocationScreenState extends State<MyCurrentLocationScreen> {
 
   Widget _buildMapArea() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFF4A90E2)));
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF4A90E2)),
+      );
     }
 
     if (_errorMessage != null) {
@@ -302,12 +341,20 @@ class _MyCurrentLocationScreenState extends State<MyCurrentLocationScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.wrong_location_outlined, color: Colors.red.shade400, size: 60),
+              Icon(
+                Icons.wrong_location_outlined,
+                color: Colors.red.shade400,
+                size: 60,
+              ),
               const SizedBox(height: 16),
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.red.shade700, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.red.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
@@ -328,27 +375,47 @@ class _MyCurrentLocationScreenState extends State<MyCurrentLocationScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: FlutterMap(
           options: MapOptions(
-            initialCenter: _currentPosition != null ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude) : const LatLng(30.58, 31.50), // Fallback center
+            initialCenter:
+                _currentPosition != null
+                    ? LatLng(
+                      _currentPosition!.latitude,
+                      _currentPosition!.longitude,
+                    )
+                    : const LatLng(30.58, 31.50), // Fallback center
             initialZoom: 17.0,
           ),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.ascon.scai',
             ),
             if (_currentPosition != null)
               MarkerLayer(
                 markers: [
                   Marker(
-                    point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                    point: LatLng(
+                      _currentPosition!.latitude,
+                      _currentPosition!.longitude,
+                    ),
                     width: 80,
                     height: 80,
-                    child: Icon(Icons.location_pin, color: Colors.red.shade500, size: 50),
+                    child: Icon(
+                      Icons.location_pin,
+                      color: Colors.red.shade500,
+                      size: 50,
+                    ),
                   ),
                 ],
               ),
