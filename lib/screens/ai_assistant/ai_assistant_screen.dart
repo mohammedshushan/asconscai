@@ -2,12 +2,22 @@
 // ai_assistant_screen.dart — flutter_chat_ui FREE version
 // Works with: flutter_animate, speech_to_text, google_generative_ai
 // ============================================================
+import 'package:asconscai/models/loan_request_model.dart';
+import 'package:asconscai/models/permissions/permission_request_model.dart';
+import 'package:asconscai/models/user_model.dart';
+import 'package:asconscai/models/vacation_balance_model.dart';
+import 'package:asconscai/models/vacation_order_model.dart';
 import 'package:asconscai/services/ai_service.dart';
+import 'package:asconscai/services/loan_service.dart';
+import 'package:asconscai/services/permission_service.dart';
+import 'package:asconscai/services/vacation_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:uuid/uuid.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'dart:convert';
+import 'dart:developer' as developer;
 
 // ──────────────────────────────────────────────────────────────
 // 1. DESIGN TOKENS
@@ -62,10 +72,10 @@ class _Suggestion {
 }
 
 const _suggestions = [
-  _Suggestion('💡', 'اشرح لي مفهوماً'),
-  _Suggestion('✍️', 'ساعدني في الكتابة'),
-  _Suggestion('🐛', 'راجع الكود'),
-  _Suggestion('🌍', 'ترجم النص'),
+  _Suggestion('🏖️', 'ما رصيد إجازاتي؟'),
+  _Suggestion('💰', 'هل عندي طلبات سلف؟'),
+  _Suggestion('�', 'كيف أقدم على إجازة؟'),
+  _Suggestion('🚶', 'اعرض تصاريحي الأخيرة'),
 ];
 
 // ──────────────────────────────────────────────────────────────
@@ -89,6 +99,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen>
   final _speech = stt.SpeechToText();
   final _aiService = AiService();
   final _scrollCtrl = ScrollController();
+  bool _isLoadingContext = true;
 
   late final AnimationController _glowCtrl = AnimationController(
     vsync: this,
@@ -99,6 +110,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen>
   void initState() {
     super.initState();
     Future.delayed(500.ms, _addWelcome);
+    _loadHrContext();
   }
 
   @override
@@ -109,12 +121,71 @@ class _AiAssistantScreenState extends State<AiAssistantScreen>
     super.dispose();
   }
 
+  // ── HR Context Loader ────────────────────────────────────
+  Future<void> _loadHrContext() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString('loggedInUser');
+      if (userJson == null) {
+        if (mounted) setState(() => _isLoadingContext = false);
+        return;
+      }
+      final user = UserModel.fromJson(jsonDecode(userJson));
+      final empCode = user.compEmpCode.toString();
+
+      final vacSvc = VacationService();
+      final loanSvc = LoanService();
+      final permSvc = PermissionService();
+
+      final results = await Future.wait([
+        vacSvc
+            .getVacationBalance(empCode)
+            .catchError((_) => <VacationBalance>[]),
+        vacSvc.getVacationOrders(empCode).catchError((_) => <VacationOrder>[]),
+        loanSvc.getLoanRequests(empCode).catchError((_) => <LoanRequest>[]),
+        permSvc
+            .getPermissionRequests(empCode)
+            .catchError((_) => <PermissionRequest>[]),
+      ]);
+
+      _aiService.updateContext(
+        HrContext(
+          user: user,
+          vacationBalances: results[0] as dynamic,
+          vacationOrders: results[1] as dynamic,
+          loanRequests: results[2] as dynamic,
+          permissionRequests: results[3] as dynamic,
+        ),
+      );
+
+      developer.log(
+        'HR Context loaded ✔️ | Vacations:${results[0].length} Loans:${results[2].length}',
+        name: 'AiAssistant',
+      );
+
+      if (!mounted) return;
+      setState(() => _isLoadingContext = false);
+      _push(
+        ChatMessage(
+          id: _uuid.v4(),
+          text:
+              'تم تحميل بياناتك بنجاح ✅\nمرحباً ${user.empName}، كيف يمكنني مساعدتك اليوم؟ 😊',
+          isUser: false,
+          createdAt: DateTime.now(),
+        ),
+      );
+    } catch (e) {
+      developer.log('Error loading HR context: $e', name: 'AiAssistant');
+      if (mounted) setState(() => _isLoadingContext = false);
+    }
+  }
+
   // ── helpers ───────────────────────────────────────────────
   void _addWelcome() => _push(
     ChatMessage(
       id: _uuid.v4(),
       text:
-          'مرحباً بك! 👋\nأنا مساعدك الذكي المدعوم بـ Gemini AI.\nكيف يمكنني مساعدتك اليوم؟',
+          'مرحباً بك! 👋\nأنا مساعد HR الذكي الخاص بك.\nجاري تحميل بياناتك... ⏳',
       isUser: false,
       createdAt: DateTime.now(),
     ),
@@ -205,7 +276,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen>
             children: [
               _Header(glowCtrl: _glowCtrl),
               Expanded(child: _buildList()),
-              if (_messages.isEmpty) _buildSuggestions(),
+              if (_messages.isEmpty && !_isLoadingContext) _buildSuggestions(),
               _InputBar(
                 onSend: _send,
                 onMic: _toggleListen,
