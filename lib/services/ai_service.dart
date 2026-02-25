@@ -1,21 +1,24 @@
-import 'package:asconscai/models/loan_request_model.dart';
-import 'package:asconscai/models/permissions/permission_request_model.dart';
-import 'package:asconscai/models/user_model.dart';
-import 'package:asconscai/models/vacation_balance_model.dart';
-import 'package:asconscai/models/vacation_order_model.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+
+// استيراد النماذج (غيّرهم حسب مسار المشروع عندك)
+// import 'package:asconscai/models/loan_request_model.dart';
+// import 'package:asconscai/models/permissions/permission_request_model.dart';
+// import 'package:asconscai/models/user_model.dart';
+// import 'package:asconscai/models/vacation_balance_model.dart';
+// import 'package:asconscai/models/vacation_order_model.dart';
 
 // ─────────────────────────────────────────────────────────────
 // HrContext — يحمل كل داتا الموظف اللي هتتحول لـ system prompt
 // ─────────────────────────────────────────────────────────────
 class HrContext {
-  final UserModel? user;
-  final List<VacationBalance> vacationBalances;
-  final List<VacationOrder> vacationOrders;
-  final List<LoanRequest> loanRequests;
-  final List<PermissionRequest> permissionRequests;
+  final dynamic user; // UserModel?
+  final List<dynamic> vacationBalances;
+  final List<dynamic> vacationOrders;
+  final List<dynamic> loanRequests;
+  final List<dynamic> permissionRequests;
 
   const HrContext({
     this.user,
@@ -34,11 +37,34 @@ class HrContext {
 }
 
 // ─────────────────────────────────────────────────────────────
-// AiService — الخدمة الرئيسية للتواصل مع Gemini
+// Message model for chat history
+// ─────────────────────────────────────────────────────────────
+class ChatMessage {
+  final String role; // 'system', 'user', 'assistant'
+  final String content;
+
+  ChatMessage({required this.role, required this.content});
+
+  Map<String, String> toJson() => {'role': role, 'content': content};
+}
+
+// ─────────────────────────────────────────────────────────────
+// AiService — خدمة ChatGPT (OpenAI)
 // ─────────────────────────────────────────────────────────────
 class AiService {
-  static const String _apiKey = 'AIzaSyBLyY9BOlWyS_zqa9wM8cipadIXqL6QvBU';
-  late ChatSession _chat;
+  // ⬇️ ضع مفتاح OpenAI هنا
+  static const String _apiKey =
+      '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';
+
+  static const String _baseUrl = 'https://api.openai.com/v1/chat/completions';
+
+  // النموذج — اختر واحد:
+  // 'gpt-4o' ← الأقوى والأحدث (مكلف شوية)
+  // 'gpt-4o-mini' ← سريع ورخيص
+  // 'gpt-3.5-turbo' ← الأرخص
+  static const String _model = 'gpt-4o-mini';
+
+  late List<ChatMessage> _chatHistory;
   HrContext _hrContext = const HrContext();
 
   final _dateFormatter = DateFormat('yyyy/MM/dd');
@@ -48,16 +74,17 @@ class AiService {
   }
 
   void _initChat() {
-    final model = GenerativeModel(
-      model: 'gemini-3-flash-preview',
-      apiKey: _apiKey,
-    );
-    _chat = model.startChat(history: [Content.text(_buildSystemPrompt())]);
+    _chatHistory = [ChatMessage(role: 'system', content: _buildSystemPrompt())];
   }
 
   /// تحديث بيانات الموظف وإعادة تهيئة المحادثة
   void updateContext(HrContext context) {
     _hrContext = context;
+    _initChat();
+  }
+
+  /// مسح تاريخ المحادثة
+  void clearChat() {
     _initChat();
   }
 
@@ -69,7 +96,7 @@ class AiService {
     buffer.writeln(
       'مهمتك مساعدة الموظفين في الاستفسار عن شؤونهم الوظيفية بأسلوب ودود ومحترف.',
     );
-    buffer.writeln('رد دائماً بالعربية.');
+    buffer.writeln('رد دائماً بالعربية بشكل واضح ومنظم.');
     buffer.writeln(
       'استخدم البيانات المقدمة لك فقط، ولا تخترع معلومات غير موجودة.',
     );
@@ -88,11 +115,12 @@ class AiService {
     buffer.writeln('══════════════════════════════════════');
     if (_hrContext.user != null) {
       final u = _hrContext.user!;
-      buffer.writeln('الاسم: ${u.empName}');
-      if (u.empNameE != null)
+      buffer.writeln('الاسم: ${u.empName ?? "غير متوفر"}');
+      if (u.empNameE != null) {
         buffer.writeln('الاسم بالإنجليزية: ${u.empNameE}');
+      }
       if (u.jobDesc != null) buffer.writeln('الوظيفة: ${u.jobDesc}');
-      buffer.writeln('كود الموظف: ${u.usersCode}');
+      buffer.writeln('كود الموظف: ${u.usersCode ?? "غير متوفر"}');
     }
     buffer.writeln();
 
@@ -194,45 +222,127 @@ class AiService {
     }
   }
 
-  // ── إرسال الرسالة ──────────────────────────────────────────
+  // ── إرسال الرسالة إلى ChatGPT ─────────────────────────────
   Future<String> sendMessage(String message) async {
-    // طباعة الـ system prompt مرة واحدة أول مرة + الرسالة دايماً
     _printPromptDebug(message);
 
     try {
-      final response = await _chat.sendMessage(Content.text(message));
-      final reply = response.text ?? 'لم أتمكن من توليد رد.';
-      _printResponseDebug(reply);
-      return reply;
+      // إضافة رسالة المستخدم إلى التاريخ
+      _chatHistory.add(ChatMessage(role: 'user', content: message));
+
+      // تجهيز جسم الطلب
+      final requestBody = jsonEncode({
+        'model': _model,
+        'messages': _chatHistory.map((msg) => msg.toJson()).toList(),
+        'temperature': 0.7,
+        'max_tokens': 2000,
+        'top_p': 0.95,
+        'frequency_penalty': 0.3,
+        'presence_penalty': 0.3,
+      });
+
+      // إرسال الطلب
+      final response = await http.post(
+        Uri.parse(_baseUrl),
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Authorization': 'Bearer $_apiKey',
+        },
+        body: requestBody,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        final reply = data['choices'][0]['message']['content'] as String;
+
+        // إضافة رد المساعد إلى التاريخ
+        _chatHistory.add(ChatMessage(role: 'assistant', content: reply));
+
+        _printResponseDebug(reply);
+        return reply;
+      } else {
+        final errorBody = utf8.decode(response.bodyBytes);
+        debugPrint('══════════════════════════════════════');
+        debugPrint('❌ [OPENAI ERROR]: Status ${response.statusCode}');
+        debugPrint('❌ [OPENAI BODY]: $errorBody');
+        debugPrint('══════════════════════════════════════');
+
+        // رسائل خطأ واضحة
+        if (response.statusCode == 401) {
+          return 'خطأ: مفتاح API غير صالح. يرجى التحقق من المفتاح.';
+        } else if (response.statusCode == 429) {
+          return 'خطأ: تم تجاوز الحد المسموح. يرجى الانتظار قليلاً.';
+        } else if (response.statusCode == 500) {
+          return 'خطأ: مشكلة في خادم OpenAI. يرجى المحاولة لاحقاً.';
+        }
+
+        return 'عذراً، حدث خطأ في الاتصال. الرجاء المحاولة مرة أخرى.';
+      }
     } catch (e) {
       debugPrint('══════════════════════════════════════');
-      debugPrint('❌ [GEMINI ERROR]: $e');
+      debugPrint('❌ [EXCEPTION]: $e');
       debugPrint('══════════════════════════════════════');
       return 'حدث خطأ: $e';
     }
   }
 
+  // ── دوال الطباعة للتصحيح ────────────────────────────────────
   void _printPromptDebug(String userMessage) {
     debugPrint('\n');
     debugPrint('╔════════════════════════════════════════╗');
-    debugPrint('║         📋 SYSTEM PROMPT               ║');
+    debugPrint('║      📋 ChatGPT SYSTEM PROMPT          ║');
     debugPrint('╚════════════════════════════════════════╝');
-    // طباعة الـ system prompt سطر بسطر
-    final promptLines = _buildSystemPrompt().split('\n');
+
+    final systemPrompt =
+        _chatHistory
+            .firstWhere(
+              (msg) => msg.role == 'system',
+              orElse: () => ChatMessage(role: 'system', content: ''),
+            )
+            .content;
+
+    final promptLines = systemPrompt.split('\n');
     for (final line in promptLines) {
       debugPrint(line);
     }
     debugPrint('────────────────────────────────────────');
-    debugPrint('💬 [USER]:  $userMessage');
+    debugPrint('💬 [USER]: $userMessage');
     debugPrint('────────────────────────────────────────');
+
+    // طباعة تاريخ المحادثة (بدون النظام)
+    if (_chatHistory.length > 1) {
+      debugPrint('📜 [CHAT HISTORY]:');
+      for (int i = 1; i < _chatHistory.length; i++) {
+        final msg = _chatHistory[i];
+        final preview =
+            msg.content.length > 50
+                ? '${msg.content.substring(0, 50)}...'
+                : msg.content;
+        debugPrint(
+          '   ${msg.role == 'user' ? '👤' : '🤖'} [${msg.role.toUpperCase()}]: $preview',
+        );
+      }
+    }
   }
 
   void _printResponseDebug(String response) {
-    debugPrint('🤖 [AI RESPONSE]:');
+    debugPrint('🤖 [ChatGPT RESPONSE]:');
     final lines = response.split('\n');
     for (final line in lines) {
       debugPrint('   $line');
     }
     debugPrint('════════════════════════════════════════\n');
+  }
+
+  // ── وظائف إضافية ───────────────────────────────────────────
+
+  /// الحصول على تاريخ المحادثة (للحفظ أو العرض)
+  List<ChatMessage> getChatHistory() {
+    return List.from(_chatHistory);
+  }
+
+  /// تعيين تاريخ محادثة محفوظ
+  void setChatHistory(List<ChatMessage> history) {
+    _chatHistory = history;
   }
 }

@@ -430,7 +430,7 @@ class _Header extends StatelessWidget {
                               ),
                           const SizedBox(width: 5),
                           const Text(
-                            'Gemini 1.5 Flash · متصل',
+                            'Chat-gpt · متصل',
                             style: TextStyle(
                               color: AiColors.online,
                               fontSize: 11,
