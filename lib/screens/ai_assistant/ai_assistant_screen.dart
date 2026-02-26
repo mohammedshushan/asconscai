@@ -109,7 +109,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen>
   @override
   void initState() {
     super.initState();
-    Future.delayed(500.ms, _addWelcome);
+    _loadSavedChat();
     _loadHrContext();
   }
 
@@ -119,6 +119,33 @@ class _AiAssistantScreenState extends State<AiAssistantScreen>
     _scrollCtrl.dispose();
     _speech.stop();
     super.dispose();
+  }
+
+  // ── Load Saved Chat ───────────────────────────────────────
+  Future<void> _loadSavedChat() async {
+    final hasHistory = await _aiService.loadChatHistory();
+    if (!mounted) return;
+
+    if (hasHistory) {
+      // نعرض الرسائل المحفوظة على الشاشة
+      final history = _aiService.getChatHistory();
+      for (final msg in history) {
+        if (msg.role == 'system') continue;
+        _messages.insert(
+          0,
+          ChatMessage(
+            id: _uuid.v4(),
+            text: msg.content,
+            isUser: msg.role == 'user',
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
+      setState(() {});
+    } else {
+      // لو مفيش محادثة محفوظة نعرض رسالة الترحيب
+      Future.delayed(500.ms, _addWelcome);
+    }
   }
 
   // ── HR Context Loader ────────────────────────────────────
@@ -226,6 +253,22 @@ class _AiAssistantScreenState extends State<AiAssistantScreen>
         createdAt: DateTime.now(),
       ),
     );
+
+    // ── حفظ المحادثة بعد كل رد ──────────────────────────────
+    _aiService.saveChatHistory();
+  }
+
+  // ── مسح المحادثة ─────────────────────────────────────────
+  Future<void> _clearChat() async {
+    _aiService.clearChat();
+    await _aiService.clearSavedHistory();
+    setState(() {
+      _messages.clear();
+      _isLoadingContext = true;
+    });
+    // عرض رسالة الترحيب أولاً ثم إعادة تحميل بيانات الموظف
+    Future.delayed(300.ms, _addWelcome);
+    _loadHrContext();
   }
 
   // ── voice ─────────────────────────────────────────────────
@@ -274,7 +317,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen>
           _AnimatedBg(ctrl: _glowCtrl),
           Column(
             children: [
-              _Header(glowCtrl: _glowCtrl),
+              _Header(glowCtrl: _glowCtrl, onClear: _clearChat),
               Expanded(child: _buildList()),
               if (_messages.isEmpty && !_isLoadingContext) _buildSuggestions(),
               _InputBar(
@@ -367,7 +410,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen>
 // ──────────────────────────────────────────────────────────────
 class _Header extends StatelessWidget {
   final AnimationController glowCtrl;
-  const _Header({required this.glowCtrl});
+  final Future<void> Function() onClear;
+  const _Header({required this.glowCtrl, required this.onClear});
 
   @override
   Widget build(BuildContext context) {
@@ -444,7 +488,7 @@ class _Header extends StatelessWidget {
                 ],
               ),
             ),
-            _IconBtn(icon: Icons.more_vert_rounded, onTap: () {}),
+            _IconBtn(icon: Icons.delete_sweep_rounded, onTap: onClear),
           ],
         ),
       ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.3, end: 0),

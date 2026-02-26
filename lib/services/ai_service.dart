@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:asconscai/services/local_storage_manager/shared_prefrences_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -46,6 +47,11 @@ class ChatMessage {
   ChatMessage({required this.role, required this.content});
 
   Map<String, String> toJson() => {'role': role, 'content': content};
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
+    role: json['role'] as String,
+    content: json['content'] as String,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -77,13 +83,19 @@ class AiService {
     _chatHistory = [ChatMessage(role: 'system', content: _buildSystemPrompt())];
   }
 
-  /// تحديث بيانات الموظف وإعادة تهيئة المحادثة
+  /// تحديث بيانات الموظف وإعادة بناء الـ System Prompt مع الإبقاء على المحادثة
   void updateContext(HrContext context) {
     _hrContext = context;
-    _initChat();
+    // نحتفظ بالرسائل الموجودة ونحدّث الـ system prompt فقط
+    final existingConversation =
+        _chatHistory.where((m) => m.role != 'system').toList();
+    _chatHistory = [
+      ChatMessage(role: 'system', content: _buildSystemPrompt()),
+      ...existingConversation,
+    ];
   }
 
-  /// مسح تاريخ المحادثة
+  /// مسح تاريخ المحادثة (للبدء من الصفر)
   void clearChat() {
     _initChat();
   }
@@ -226,6 +238,8 @@ class AiService {
   Future<String> sendMessage(String message) async {
     _printPromptDebug(message);
 
+    String reply;
+
     try {
       // إضافة رسالة المستخدم إلى التاريخ
       _chatHistory.add(ChatMessage(role: 'user', content: message));
@@ -253,13 +267,8 @@ class AiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
-        final reply = data['choices'][0]['message']['content'] as String;
-
-        // إضافة رد المساعد إلى التاريخ
-        _chatHistory.add(ChatMessage(role: 'assistant', content: reply));
-
+        reply = data['choices'][0]['message']['content'] as String;
         _printResponseDebug(reply);
-        return reply;
       } else {
         final errorBody = utf8.decode(response.bodyBytes);
         debugPrint('══════════════════════════════════════');
@@ -267,23 +276,26 @@ class AiService {
         debugPrint('❌ [OPENAI BODY]: $errorBody');
         debugPrint('══════════════════════════════════════');
 
-        // رسائل خطأ واضحة
         if (response.statusCode == 401) {
-          return 'خطأ: مفتاح API غير صالح. يرجى التحقق من المفتاح.';
+          reply = 'خطأ: مفتاح API غير صالح. يرجى التحقق من المفتاح.';
         } else if (response.statusCode == 429) {
-          return 'خطأ: تم تجاوز الحد المسموح. يرجى الانتظار قليلاً.';
+          reply = 'خطأ: تم تجاوز الحد المسموح. يرجى الانتظار قليلاً.';
         } else if (response.statusCode == 500) {
-          return 'خطأ: مشكلة في خادم OpenAI. يرجى المحاولة لاحقاً.';
+          reply = 'خطأ: مشكلة في خادم OpenAI. يرجى المحاولة لاحقاً.';
+        } else {
+          reply = 'عذراً، حدث خطأ في الاتصال. الرجاء المحاولة مرة أخرى.';
         }
-
-        return 'عذراً، حدث خطأ في الاتصال. الرجاء المحاولة مرة أخرى.';
       }
     } catch (e) {
       debugPrint('══════════════════════════════════════');
       debugPrint('❌ [EXCEPTION]: $e');
       debugPrint('══════════════════════════════════════');
-      return 'حدث خطأ: $e';
+      reply = 'حدث خطأ: $e';
     }
+
+    // ── إضافة الرد للـ history دائماً (نجاح أو خطأ) ──────────
+    _chatHistory.add(ChatMessage(role: 'assistant', content: reply));
+    return reply;
   }
 
   // ── دوال الطباعة للتصحيح ────────────────────────────────────
@@ -344,5 +356,58 @@ class AiService {
   /// تعيين تاريخ محادثة محفوظ
   void setChatHistory(List<ChatMessage> history) {
     _chatHistory = history;
+  }
+
+  // ── حفظ وتحميل المحادثة من SharedPreferences ───────────────
+
+  /// حفظ رسائل المستخدم والمساعد فقط (بدون system prompt)
+  Future<void> saveChatHistory() async {
+    try {
+      final helper = await SharedPrefsHelper.getInstance();
+      // نحفظ كل الرسائل ما عدا الـ system prompt
+      final messagesOnly =
+          _chatHistory.where((m) => m.role != 'system').toList();
+      final encoded = jsonEncode(messagesOnly.map((m) => m.toJson()).toList());
+      await helper.setString(SharedPrefsHelper.chatHistoryKey, encoded);
+    } catch (e) {
+      debugPrint('❌ [saveChatHistory] $e');
+    }
+  }
+
+  /// تحميل المحادثة المحفوظة وإضافتها بعد الـ system prompt
+  Future<bool> loadChatHistory() async {
+    try {
+      final helper = await SharedPrefsHelper.getInstance();
+      final raw = helper.getString(SharedPrefsHelper.chatHistoryKey);
+      if (raw == null || raw.isEmpty) return false;
+
+      final List<dynamic> decoded = jsonDecode(raw);
+      final loaded =
+          decoded
+              .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
+              .toList();
+
+      if (loaded.isEmpty) return false;
+
+      // نضيف الرسائل المحفوظة بعد system prompt
+      _chatHistory = [
+        _chatHistory.first, // system prompt
+        ...loaded,
+      ];
+      return true;
+    } catch (e) {
+      debugPrint('❌ [loadChatHistory] $e');
+      return false;
+    }
+  }
+
+  /// حذف المحادثة المحفوظة نهائياً
+  Future<void> clearSavedHistory() async {
+    try {
+      final helper = await SharedPrefsHelper.getInstance();
+      await helper.remove(SharedPrefsHelper.chatHistoryKey);
+    } catch (e) {
+      debugPrint('❌ [clearSavedHistory] $e');
+    }
   }
 }
