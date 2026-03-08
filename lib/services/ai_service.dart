@@ -59,8 +59,7 @@ class ChatMessage {
 // ─────────────────────────────────────────────────────────────
 class AiService {
   // ⬇️ ضع مفتاح OpenAI هنا
-  static const String _apiKey =
-      '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';
+  static const String _apiKey = 'asd';
 
   static const String _baseUrl = 'https://api.openai.com/v1/chat/completions';
 
