@@ -63,6 +63,7 @@ dependencies:
   speech_to_text: ^7.3.0
   google_generative_ai: ^0.4.7
   flutter_animate: ^4.5.0
+  flutter_dotenv: ^6.0.0
 
 
 dev_dependencies:
@@ -97,6 +98,7 @@ flutter:
     - assets/images/
     - assets/lang/
     - assets/animations/
+    - .env
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

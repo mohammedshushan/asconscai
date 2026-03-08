@@ -1,4 +1,3 @@
-
 /*
 
 
@@ -83,8 +82,8 @@ class _MyAppState extends State<MyApp> {
 }
 */
 
-
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'app_localizations.dart';
 import 'screens/auth/login_screen.dart';
@@ -93,8 +92,9 @@ import 'screens/auth/login_screen.dart';
 // import 'screens/home_screen.dart';
 // import 'services/auth_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   runApp(const MyApp());
 }
 
@@ -133,10 +133,7 @@ class _MyAppState extends State<MyApp> {
       title: 'Ascon HR',
       debugShowCheckedModeBanner: false,
       locale: _locale,
-      supportedLocales: const [
-        Locale('en', ''),
-        Locale('ar', ''),
-      ],
+      supportedLocales: const [Locale('en', ''), Locale('ar', '')],
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

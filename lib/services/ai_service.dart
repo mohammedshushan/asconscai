@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:asconscai/services/local_storage_manager/shared_prefrences_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
@@ -59,7 +60,7 @@ class ChatMessage {
 // ─────────────────────────────────────────────────────────────
 class AiService {
   // ⬇️ ضع مفتاح OpenAI هنا
-  static const String _apiKey = 'asd';
+  static String get _apiKey => dotenv.env['OPENAI_API_KEY'] ?? '';
 
   static const String _baseUrl = 'https://api.openai.com/v1/chat/completions';
 
