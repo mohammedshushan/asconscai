@@ -225,15 +225,17 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context) => ApprovalsMainScreen(user: widget.user),
             ),
           );
-      } else if (moduleName.contains('ai assistant')) {
-        if (mounted) Navigator.of(context, rootNavigator: true).pop();
-        await Future.delayed(const Duration(milliseconds: 50));
-        if (mounted)
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AiAssistantScreen()),
-          );
-      } else {
+      }
+      //  else if (moduleName.contains('ai assistant')) {
+      //   if (mounted) Navigator.of(context, rootNavigator: true).pop();
+      //   await Future.delayed(const Duration(milliseconds: 50));
+      //   if (mounted)
+      //     Navigator.push(
+      //       context,
+      //       MaterialPageRoute(builder: (context) => const AiAssistantScreen()),
+      //     );
+      // }
+      else {
         if (!mounted) return;
 
         // إغلاق مؤشر التحميل
@@ -410,19 +412,19 @@ class _HomeScreenState extends State<HomeScreen> {
           }
 
           final modules = List<ModuleModel>.from(snapshot.data!);
-          // إضافة وحدة المساعد الذكي يدوياً
-          if (!modules.any(
-            (m) => m.nameEn.toLowerCase().contains('ai assistant'),
-          )) {
-            modules.add(
-              ModuleModel(
-                id: 99,
-                nameAr: 'المساعد الذكي',
-                nameEn: 'AI Assistant',
-                order: modules.length + 1,
-              ),
-            );
-          }
+          // // إضافة وحدة المساعد الذكي يدوياً
+          // if (!modules.any(
+          //   (m) => m.nameEn.toLowerCase().contains('ai assistant'),
+          // )) {
+          //   modules.add(
+          //     ModuleModel(
+          //       id: 99,
+          //       nameAr: 'المساعد الذكي',
+          //       nameEn: 'AI Assistant',
+          //       order: modules.length + 1,
+          //     ),
+          //   );
+          // }
 
           return CustomScrollView(
             slivers: [
